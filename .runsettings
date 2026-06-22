@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat code coverage">
+        <Configuration>
+
+          <Format>cobertura</Format>
+
+          <Exclude>
+            [*.Api]*,
+            [*.AppHost]*,
+            [*.ServiceDefaults]*,
+            [FcgCatalog.Application]FcgCatalog.Application.Responses.*,
+            [FcgCatalog.Application]FcgCatalog.Application.Commands.*,
+            [FcgCatalog.Application]FcgCatalog.Application.Queries.*,
+            [FcgCatalog.Infrastructure]FcgCatalog.Infrastructure.Messaging.*,
+            [FcgCatalog.SharedKernel]FcgCatalog.SharedKernel.Exceptions.*,
+            [FcgCatalog.SharedKernel]FcgCatalog.SharedKernel.Settings.*,
+            [FcgCatalog.SharedKernel]FcgCatalog.SharedKernel.Requests.*,
+            [FcgCatalog.SharedKernel]FcgCatalog.SharedKernel.Behaviors.*,
+            [System.Text.RegularExpressions.Generated]*
+          </Exclude>
+
+          <ExcludeByFile>
+            **/*.g.cs,
+            **/Migrations/*.cs,
+            **/*Designer.cs
+          </ExcludeByFile>
+
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>
