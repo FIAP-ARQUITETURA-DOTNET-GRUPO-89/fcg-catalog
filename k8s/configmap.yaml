@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: catalog-config
+  namespace: fcg
+data:
+  ASPNETCORE_ENVIRONMENT: "Production"
+  ASPNETCORE_URLS: "http://+:8080"
+  DOTNET_ENVIRONMENT: "Production"
+  JwtSettings__Issuer: "FcgCatalog-Issuer"
+  JwtSettings__ExpirationHours: "2"
+  MassTransit__RetryLimit: "5"
+  MassTransit__MinIntervalSeconds: "1"
+  MassTransit__MaxIntervalSeconds: "30"
+  MassTransit__IntervalDeltaSeconds: "2"

@@ -1,5 +1,5 @@
 using FcgCatalog.Domain.Entities;
-using FcgCatalog.Domain.ValueObjects;
+using FcgCatalog.Domain.Enums;
 using FcgCatalog.Infrastructure.Database;
 
 namespace FcgCatalog.IntegrationTests.TestHelpers;
@@ -11,25 +11,21 @@ public static class TestDataSeeder
 {
     public static async Task SeedAsync(FcgCatalogDbContext context)
     {
-        if (context.Orders.Any())
+        if (context.Games.Any())
         {
             return;
         }
 
-        var order = new Order(
-            customer: "Cliente Teste",
-            totalAmount: 150.00m,
-            deliveryAddress: new Address(
-                street: "Rua Teste",
-                city: "Lages",
-                state: "SC",
-                cep: "88500000"
-            )
+        var game = new Game(
+            nome: "Jogo Teste",
+            descricao: "Descrição do jogo de teste para integração.",
+            preco: 99.90m,
+            dataLancamento: new DateTime(2024, 1, 1),
+            classificacaoEtaria: ClassificacaoEtaria.Livre
         );
 
-        context.Orders.Add(order);
+        context.Games.Add(game);
 
         await context.SaveChangesAsync();
     }
 }
-

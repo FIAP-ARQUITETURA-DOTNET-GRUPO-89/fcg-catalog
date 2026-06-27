@@ -1,0 +1,73 @@
+version: "3.9"
+
+services:
+  catalog-db:
+    image: postgres:16-alpine
+    container_name: catalog-db
+    environment:
+      POSTGRES_USER: catalog
+      POSTGRES_PASSWORD: catalog
+      POSTGRES_DB: catalog
+    ports:
+      - "5532:5432"
+    volumes:
+      - catalog-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U catalog"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: catalog-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  catalog-api:
+    build:
+      context: .
+      dockerfile: src/FcgCatalog.Api/Dockerfile
+    container_name: catalog-api
+    depends_on:
+      catalog-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__Default: "Host=catalog-db;Port=5432;Database=catalog;Username=catalog;Password=catalog"
+      ConnectionStrings__rabbitmq: "amqp://guest:guest@rabbitmq:5672"
+      JwtSettings__Issuer: "FcgCatalog-Issuer"
+      JwtSettings__SecurityKey: "FcgCatalog_Secret_Key_2026_High_Security_Token"
+      JwtSettings__ExpirationHours: "2"
+    ports:
+      - "8080:8080"
+
+  catalog-worker:
+    build:
+      context: .
+      dockerfile: src/FcgCatalog.Worker/Dockerfile
+    container_name: catalog-worker
+    depends_on:
+      catalog-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      DOTNET_ENVIRONMENT: Development
+      ConnectionStrings__Default: "Host=catalog-db;Port=5432;Database=catalog;Username=catalog;Password=catalog"
+      ConnectionStrings__rabbitmq: "amqp://guest:guest@rabbitmq:5672"
+
+volumes:
+  catalog-db-data:

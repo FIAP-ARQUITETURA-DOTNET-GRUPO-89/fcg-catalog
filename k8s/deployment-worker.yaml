@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalog-worker
+  namespace: fcg
+  labels:
+    app: catalog-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: catalog-worker
+  template:
+    metadata:
+      labels:
+        app: catalog-worker
+    spec:
+      containers:
+        - name: catalog-worker
+          image: fcgcatalog/worker:latest
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: catalog-config
+            - secretRef:
+                name: catalog-secret
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 300m
+              memory: 384Mi

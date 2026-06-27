@@ -1,8 +1,66 @@
-# 🚀 FcgCatalog
+# 🚀 FcgCatalog — CatalogAPI
 
-Template de API desenvolvido com **ArchForge**, uma CLI para geração de projetos .NET padronizados.
+Microsserviço de **Catálogo de Jogos** da plataforma **FIAP Cloud Games (FCG)**. Faz parte da decomposição em microsserviços orientados a eventos (Fase 2 do Tech Challenge), substituindo a parte de jogos do monolito original.
 
-O objetivo do ArchForge é acelerar a criação de novos serviços, eliminando tarefas repetitivas de configuração e fornecendo uma estrutura consistente, testável e pronta para evolução.
+## 🎯 Responsabilidades
+
+- CRUD de jogos do catálogo (criar, listar, obter, atualizar, alterar preço, inativar).
+- Iniciar o fluxo de compra publicando **`OrderPlacedEvent`**.
+- Consumir **`PaymentProcessedEvent`** (via Worker) e adicionar o jogo à biblioteca do usuário quando o pagamento for `Approved`. Pagamentos `Rejected` não alteram a biblioteca.
+- Manter a biblioteca por usuário (`UserGame`), com idempotência por `OrderId` e unicidade `(UserId, GameId)`.
+
+## 🔄 Fluxo de Compra
+
+```
+[Usuário] POST /api/library/purchase
+            │
+            ▼
+   CatalogAPI cria Order(PendingPayment)
+            │
+            └──► OrderPlacedEvent ─► [PaymentsAPI]
+                                          │
+                  PaymentProcessedEvent ◄─┘
+                            │
+                            ▼
+              CatalogWorker (PaymentProcessedConsumer)
+                            │
+                            ▼
+            Order.Approve()  +  UserGame.Add()      (idempotente)
+```
+
+## 🔌 Endpoints — `/api/games`
+
+| Verbo  | Rota                          | Policy           | Descrição                          |
+| ------ | ----------------------------- | ---------------- | ---------------------------------- |
+| POST   | `/api/games`                  | `AdminPolicy`    | Cria um novo jogo                  |
+| GET    | `/api/games?Page&PageSize`    | `CustomerPolicy` | Lista paginada de jogos ativos     |
+| GET    | `/api/games/{id}`             | `CustomerPolicy` | Obtém um jogo por identificador    |
+| PUT    | `/api/games/{id}`             | `AdminPolicy`    | Atualiza dados do jogo             |
+| PATCH  | `/api/games/{id}/price`       | `AdminPolicy`    | Altera o preço de um jogo          |
+| DELETE | `/api/games/{id}`             | `AdminPolicy`    | Inativa um jogo (soft delete)      |
+
+## 🛒 Endpoints — `/api/library`
+
+| Verbo | Rota                       | Policy           | Descrição                                                         |
+| ----- | -------------------------- | ---------------- | ----------------------------------------------------------------- |
+| POST  | `/api/library/purchase`    | `CustomerPolicy` | Inicia a compra de um jogo (publica `OrderPlacedEvent`)           |
+| GET   | `/api/library`             | `CustomerPolicy` | Lista a biblioteca do usuário autenticado                         |
+
+## 🔧 Variáveis de Ambiente
+
+| Variável                            | Descrição                                                |
+| ----------------------------------- | -------------------------------------------------------- |
+| `ConnectionStrings__Default`        | Connection string do PostgreSQL do CatalogAPI            |
+| `ConnectionStrings__rabbitmq`       | Connection string do RabbitMQ (publisher de eventos)     |
+| `JwtSettings__Issuer`               | Issuer esperado no JWT emitido pelo UsersAPI             |
+| `JwtSettings__SecurityKey`          | Chave simétrica utilizada para validar o JWT             |
+| `JwtSettings__ExpirationHours`      | Tempo de expiração (utilizado apenas para testes)        |
+
+> Em produção (Kubernetes), `ConnectionStrings__*` e `JwtSettings__SecurityKey` ficam em `Secret`; demais opções em `ConfigMap`.
+
+---
+
+Template original do projeto (ArchForge):
 
 ## 📑 Sumário
 
