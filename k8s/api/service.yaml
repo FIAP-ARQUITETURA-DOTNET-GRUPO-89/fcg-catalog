@@ -20,5 +20,5 @@ spec:
 
   ports:
     - name: http
-      port: 7090
-      targetPort: 7090
+      port: 7030
+      targetPort: 7030

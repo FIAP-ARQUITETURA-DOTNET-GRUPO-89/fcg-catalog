@@ -14,7 +14,7 @@ metadata:
 
 data:
   ASPNETCORE_ENVIRONMENT: "Production"
-  ASPNETCORE_URLS: "http://+:7090"
+  ASPNETCORE_URLS: "http://+:7030"
   Serilog__MinimumLevel__Default: "Warning"
   Serilog__MinimumLevel__Override__Microsoft: "Warning"
   Serilog__MinimumLevel__Override__System: "Warning"

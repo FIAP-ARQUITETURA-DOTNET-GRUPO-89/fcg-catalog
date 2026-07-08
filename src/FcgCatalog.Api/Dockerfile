@@ -40,7 +40,7 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0
 
 WORKDIR /app
 
-EXPOSE 7072
+EXPOSE 7030
 
 COPY --from=build /app/publish .
 
