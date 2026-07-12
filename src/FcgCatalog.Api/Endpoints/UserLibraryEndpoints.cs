@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using MediatR;
 using FcgCatalog.Api.Extensions;
 using FcgCatalog.Application.Commands.Library;
@@ -8,9 +8,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace FcgCatalog.Api.Endpoints;
 
-public static class LibraryEndpoints
+public static class UserLibraryEndpoints
 {
-    public static void MapLibraryEndpoints(this IEndpointRouteBuilder app)
+    public static void MapUserLibraryEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("api/library")
             .WithTags("Biblioteca")
