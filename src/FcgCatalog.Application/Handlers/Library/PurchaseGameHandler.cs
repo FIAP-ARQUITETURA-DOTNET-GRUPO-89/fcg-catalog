@@ -1,4 +1,4 @@
-using FgcGames.EventContracts.Events;
+﻿using FgcGames.EventContracts.Events;
 using MassTransit;
 using MediatR;
 using FcgCatalog.Application.Commands.Library;
@@ -19,19 +19,26 @@ public sealed partial class PurchaseGameHandler(
     IUserGameRepository userGameRepository,
     IPublishEndpoint publishEndpoint,
     ILogger<PurchaseGameHandler> logger)
-: IRequestHandler<PurchaseGameCommand, Result<PurchaseGameResponse>>
+    : IRequestHandler<PurchaseGameCommand, Result<PurchaseGameResponse>>
 {
     public async Task<Result<PurchaseGameResponse>> Handle(PurchaseGameCommand request, CancellationToken cancellationToken)
     {
-        var game = await gameRepository.GetByIdAsNoTrackingAsync(request.GameId, cancellationToken)
-            ?? throw new NotFoundException($"Jogo {request.GameId} não encontrado ou indisponível.");
+        var game = await gameRepository.GetByIdAsNoTrackingAsync(request.GameId, cancellationToken);
+
+        if (game is null)
+        {
+            LogGameNotFound(logger, request.GameId);
+            throw new NotFoundException($"Jogo {request.GameId} não encontrado ou indisponível.");
+        }
 
         if (await userGameRepository.ExistsAsync(request.UserId, request.GameId, cancellationToken))
         {
+            LogGameAlreadyOwned(logger, request.UserId, request.GameId);
             throw new AlreadyExistsException("O usuário já possui este jogo na biblioteca.");
         }
 
         var order = new Order(request.UserId, request.GameId, game.Preco);
+
         orderRepository.Add(order);
         await orderRepository.SaveChangesAsync(cancellationToken);
 
@@ -43,6 +50,28 @@ public sealed partial class PurchaseGameHandler(
         return Result.Success(new PurchaseGameResponse(order.Id, order.GameId, order.Price));
     }
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "Compra iniciada. OrderId: {OrderId}, UserId: {UserId}, GameId: {GameId}, Price: {Price}.")]
-    private static partial void LogPurchaseInitiated(ILogger logger, Guid orderId, Guid userId, Guid gameId, decimal price);
+    [LoggerMessage(
+        Level = LogLevel.Information,
+        Message = "Compra iniciada. OrderId: {OrderId}, UserId: {UserId}, GameId: {GameId}, Price: {Price}.")]
+    private static partial void LogPurchaseInitiated(
+        ILogger logger,
+        Guid orderId,
+        Guid userId,
+        Guid gameId,
+        decimal price);
+
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "Compra não realizada. Jogo {GameId} não encontrado.")]
+    private static partial void LogGameNotFound(
+        ILogger logger,
+        Guid gameId);
+
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "Compra não realizada. Usuário {UserId} já possui o jogo {GameId}.")]
+    private static partial void LogGameAlreadyOwned(
+        ILogger logger,
+        Guid userId,
+        Guid gameId);
 }
