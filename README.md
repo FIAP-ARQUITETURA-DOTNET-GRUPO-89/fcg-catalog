@@ -1,4 +1,4 @@
-# 🚀 FcgCatalog — CatalogAPI
+﻿# 🚀 FcgCatalog — CatalogAPI
 
 Microsserviço de **Catálogo de Jogos** da plataforma **FIAP Cloud Games (FCG)**. Faz parte da decomposição em microsserviços orientados a eventos (Fase 2 do Tech Challenge), substituindo a parte de jogos do monolito original.
 
@@ -12,7 +12,7 @@ Microsserviço de **Catálogo de Jogos** da plataforma **FIAP Cloud Games (FCG)*
 ## 🔄 Fluxo de Compra
 
 ```
-[Usuário] POST /api/library/purchase
+[Usuário] POST /api/orders
             │
             ▼
    CatalogAPI cria Order(PendingPayment)
@@ -43,7 +43,7 @@ Microsserviço de **Catálogo de Jogos** da plataforma **FIAP Cloud Games (FCG)*
 
 | Verbo | Rota                       | Policy           | Descrição                                                         |
 | ----- | -------------------------- | ---------------- | ----------------------------------------------------------------- |
-| POST  | `/api/library/purchase`    | `CustomerPolicy` | Inicia a compra de um jogo (publica `OrderPlacedEvent`)           |
+| POST  | `/api/orders`              | `CustomerPolicy` | Inicia a compra de um jogo (publica `OrderPlacedEvent`)           |
 | GET   | `/api/library`             | `CustomerPolicy` | Lista a biblioteca do usuário autenticado                         |
 
 ## 🔧 Variáveis de Ambiente

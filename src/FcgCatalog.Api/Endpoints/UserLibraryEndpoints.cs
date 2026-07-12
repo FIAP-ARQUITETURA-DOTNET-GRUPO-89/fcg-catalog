@@ -12,22 +12,28 @@ public static class UserLibraryEndpoints
 {
     public static void MapUserLibraryEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("api/library")
+        var libraryGroup = app.MapGroup("api/library")
             .WithTags("Biblioteca")
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
 
-        group.MapPost("/purchase", PurchaseAsync)
+        var ordersGroup = app.MapGroup("api/orders")
+            .WithTags("Pedidos")
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
+
+        ordersGroup.MapPost("/", PurchaseAsync)
             .RequireAuthorization("CustomerPolicy")
-            .WithSummary("Inicia a compra de um jogo")
-            .WithDescription("Publica um OrderPlacedEvent que será processado pelo PaymentsAPI.")
+            .WithSummary("Cria um pedido de compra")
+            .WithDescription("Cria um pedido de compra e publica um OrderPlacedEvent que será processado pelo PaymentsAPI.")
             .Produces<PurchaseGameResponse>(StatusCodes.Status202Accepted)
             .ProducesValidationProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status409Conflict);
 
-        group.MapGet("/", GetUserLibraryAsync)
+        libraryGroup.MapGet("/", GetUserLibraryAsync)
             .RequireAuthorization("CustomerPolicy")
             .WithSummary("Lista os jogos da biblioteca do usuário autenticado")
             .Produces<IReadOnlyList<UserGameResponse>>(StatusCodes.Status200OK);
@@ -37,7 +43,8 @@ public static class UserLibraryEndpoints
     {
         command.UserId = GetUserId(user);
         var result = await mediator.Send(command, cancellationToken);
-        return result.ToAcceptedResult(_ => "/api/library");
+
+        return result.ToAcceptedResult(_ => "/api/orders");
     }
 
     private static async Task<IResult> GetUserLibraryAsync(ClaimsPrincipal user, IMediator mediator, CancellationToken cancellationToken)
