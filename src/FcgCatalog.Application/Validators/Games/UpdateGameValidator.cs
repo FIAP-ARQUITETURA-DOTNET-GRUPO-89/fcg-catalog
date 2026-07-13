@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using FcgCatalog.Application.Commands.Games;
 using FcgCatalog.Domain.Enums;
 using FcgCatalog.Domain.Repositories.Games;
@@ -13,22 +13,22 @@ public class UpdateGameValidator : AbstractValidator<UpdateGameCommand>
     public UpdateGameValidator(IGameRepository repository)
     {
         RuleFor(x => x.Nome)
-            .NotEmpty().WithMessage("O nome do jogo é obrigatório.")
-            .MaximumLength(100).WithMessage("O nome deve ter no máximo 100 caracteres.")
+            .NotEmpty()
+            .MaximumLength(100)
             .MustAsync(async (command, nome, ct) => !await repository.ExistsByNameAsync(nome, command.Id, ct))
                 .WithMessage("Já existe um jogo cadastrado com esse nome.");
 
         RuleFor(x => x.Descricao)
-            .NotEmpty().WithMessage("A descrição do jogo é obrigatória.")
-            .MaximumLength(500).WithMessage("A descrição deve ter no máximo 500 caracteres.");
+            .NotEmpty()
+            .MaximumLength(500);
 
         RuleFor(x => x.Preco)
-            .GreaterThan(0).WithMessage("O preço deve ser maior que zero.")
-            .LessThanOrEqualTo(9999.99m).WithMessage("O preço não pode ser superior a R$ 9.999,99.")
-            .PrecisionScale(7, 2, false).WithMessage("O preço deve ter no máximo 2 casas decimais.");
+            .GreaterThan(0)
+            .LessThanOrEqualTo(9999.99m)
+            .PrecisionScale(7, 2, false);
 
         RuleFor(x => x.DataLancamento)
-            .NotEmpty().WithMessage("A data de lançamento é obrigatória.");
+            .NotEmpty();
 
         RuleFor(x => x.ClassificacaoEtaria)
             .Must(valor => ValoresValidos.Contains(valor))
