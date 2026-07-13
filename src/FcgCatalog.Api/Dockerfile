@@ -32,9 +32,7 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 FROM base AS final
 WORKDIR /app
 
-USER $APP_UID
-
-EXPOSE 7072
+EXPOSE 7030
 
 COPY --from=build /app/publish .
 
