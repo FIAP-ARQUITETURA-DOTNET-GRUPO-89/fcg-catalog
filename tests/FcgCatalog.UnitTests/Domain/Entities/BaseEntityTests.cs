@@ -1,4 +1,4 @@
-using FcgCatalog.Domain.Entities;
+﻿using FcgCatalog.Domain.Entities;
 using Shouldly;
 
 namespace FcgCatalog.UnitTests.Domain.Entities;
@@ -8,7 +8,9 @@ public class BaseEntityTests
     [Fact]
     public void Dado_NovaEntidade_Quando_Criada_Entao_PossuiIdECreatedAt()
     {
-        // Arrange & Act
+        // Arrange
+
+        // Act
         var entity = CreateTestEntity();
 
         // Assert

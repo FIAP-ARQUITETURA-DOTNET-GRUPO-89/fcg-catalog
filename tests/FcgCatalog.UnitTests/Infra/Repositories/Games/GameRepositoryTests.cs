@@ -1,4 +1,4 @@
-using FcgCatalog.Domain.Entities;
+﻿using FcgCatalog.Domain.Entities;
 using FcgCatalog.Domain.Enums;
 using FcgCatalog.Infrastructure.Repositories.Games;
 using FcgCatalog.UnitTests.TestHelpers.Factories;
@@ -14,14 +14,19 @@ public class GameRepositoryTests
     [Fact]
     public async Task Add_DevePersistirJogo()
     {
+        // Arrange
         using var ctx = InMemoryDbContextFactory.CreateContext();
         var repo = new GameRepository(ctx);
 
         var game = NewGame();
+
+        // Act
         repo.Add(game);
         await repo.SaveChangesAsync();
 
         var stored = await repo.GetByIdAsync(game.Id);
+
+        // Assert
         stored.ShouldNotBeNull();
         stored!.Nome.ShouldBe("Halo");
     }
@@ -29,46 +34,64 @@ public class GameRepositoryTests
     [Fact]
     public async Task ExistsByNameAsync_DeveIgnorarIdInformado()
     {
+        // Arrange
         using var ctx = InMemoryDbContextFactory.CreateContext();
         var repo = new GameRepository(ctx);
 
         var game = NewGame("Halo");
+
         repo.Add(game);
         await repo.SaveChangesAsync();
 
-        (await repo.ExistsByNameAsync("Halo")).ShouldBeTrue();
-        (await repo.ExistsByNameAsync("Halo", game.Id)).ShouldBeFalse();
+        // Act
+        var exists = await repo.ExistsByNameAsync("Halo");
+        var existsIgnoringId = await repo.ExistsByNameAsync("Halo", game.Id);
+
+        // Assert
+        exists.ShouldBeTrue();
+        existsIgnoringId.ShouldBeFalse();
     }
 
     [Fact]
     public async Task CountActiveAsync_DeveIgnorarInativos()
     {
+        // Arrange
         using var ctx = InMemoryDbContextFactory.CreateContext();
         var repo = new GameRepository(ctx);
 
         var ativo = NewGame("A");
         var inativo = NewGame("B");
         inativo.Inativar();
+
         repo.Add(ativo);
         repo.Add(inativo);
         await repo.SaveChangesAsync();
 
-        (await repo.CountActiveAsync()).ShouldBe(1);
+        // Act
+        var total = await repo.CountActiveAsync();
+
+        // Assert
+        total.ShouldBe(1);
     }
 
     [Fact]
     public async Task GetPagedAsNoTrackingAsync_DeveRetornarOrdenadoPorNome()
     {
+        // Arrange
         using var ctx = InMemoryDbContextFactory.CreateContext();
         var repo = new GameRepository(ctx);
 
         repo.Add(NewGame("Banjo"));
         repo.Add(NewGame("Halo"));
         repo.Add(NewGame("Doom"));
+
         await repo.SaveChangesAsync();
 
+        // Act
         var page = await repo.GetPagedAsNoTrackingAsync(1, 10);
 
-        page.Select(g => g.Nome).ShouldBe(new[] { "Banjo", "Doom", "Halo" });
+        // Assert
+        page.Select(g => g.Nome)
+            .ShouldBe(new[] { "Banjo", "Doom", "Halo" });
     }
 }

@@ -1,4 +1,4 @@
-using FgcGames.EventContracts.Events;
+﻿using FgcGames.EventContracts.Events;
 using MassTransit;
 using FcgCatalog.Application.Commands.Library;
 using FcgCatalog.Application.Handlers.Library;
@@ -19,63 +19,135 @@ public class PurchaseGameHandlerTests
     [Fact]
     public async Task Handle_QuandoJogoNaoExiste_LancaNotFound()
     {
+        // Arrange
         var gameRepo = Substitute.For<IGameRepository>();
         var orderRepo = Substitute.For<IOrderRepository>();
         var userGameRepo = Substitute.For<IUserGameRepository>();
         var publisher = Substitute.For<IPublishEndpoint>();
 
-        gameRepo.GetByIdAsNoTrackingAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns((Game?)null);
+        gameRepo.GetByIdAsNoTrackingAsync(
+                Arg.Any<Guid>(),
+                Arg.Any<CancellationToken>())
+            .Returns((Game?)null);
 
-        var handler = new PurchaseGameHandler(gameRepo, orderRepo, userGameRepo, publisher, NullLogger<PurchaseGameHandler>.Instance);
+        var handler = new PurchaseGameHandler(
+            gameRepo,
+            orderRepo,
+            userGameRepo,
+            publisher,
+            NullLogger<PurchaseGameHandler>.Instance);
 
-        var command = new PurchaseGameCommand(Guid.NewGuid()) { UserId = Guid.NewGuid() };
+        var command = new PurchaseGameCommand(Guid.NewGuid())
+        {
+            UserId = Guid.NewGuid()
+        };
 
-        await Should.ThrowAsync<NotFoundException>(() => handler.Handle(command, CancellationToken.None));
+        // Act
+        var action = () => handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        await Should.ThrowAsync<NotFoundException>(action);
     }
 
     [Fact]
     public async Task Handle_QuandoUsuarioJaPossui_LancaAlreadyExists()
     {
+        // Arrange
         var gameRepo = Substitute.For<IGameRepository>();
         var orderRepo = Substitute.For<IOrderRepository>();
         var userGameRepo = Substitute.For<IUserGameRepository>();
         var publisher = Substitute.For<IPublishEndpoint>();
 
-        var game = new Game("Halo", "desc", 100m, DateTime.Today, ClassificacaoEtaria.Livre);
-        gameRepo.GetByIdAsNoTrackingAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns(game);
-        userGameRepo.ExistsAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns(true);
+        var game = new Game(
+            "Halo",
+            "desc",
+            100m,
+            DateTime.Today,
+            ClassificacaoEtaria.Livre);
 
-        var handler = new PurchaseGameHandler(gameRepo, orderRepo, userGameRepo, publisher, NullLogger<PurchaseGameHandler>.Instance);
+        gameRepo.GetByIdAsNoTrackingAsync(
+                Arg.Any<Guid>(),
+                Arg.Any<CancellationToken>())
+            .Returns(game);
 
-        var command = new PurchaseGameCommand(game.Id) { UserId = Guid.NewGuid() };
+        userGameRepo.ExistsAsync(
+                Arg.Any<Guid>(),
+                Arg.Any<Guid>(),
+                Arg.Any<CancellationToken>())
+            .Returns(true);
 
-        await Should.ThrowAsync<AlreadyExistsException>(() => handler.Handle(command, CancellationToken.None));
+        var handler = new PurchaseGameHandler(
+            gameRepo,
+            orderRepo,
+            userGameRepo,
+            publisher,
+            NullLogger<PurchaseGameHandler>.Instance);
+
+        var command = new PurchaseGameCommand(game.Id)
+        {
+            UserId = Guid.NewGuid()
+        };
+
+        // Act
+        var action = () => handler.Handle(command, CancellationToken.None);
+
+        // Assert
+        await Should.ThrowAsync<AlreadyExistsException>(action);
     }
 
     [Fact]
     public async Task Handle_DeveCriarOrderEPublicarOrderPlacedEvent()
     {
+        // Arrange
         var gameRepo = Substitute.For<IGameRepository>();
         var orderRepo = Substitute.For<IOrderRepository>();
         var userGameRepo = Substitute.For<IUserGameRepository>();
         var publisher = Substitute.For<IPublishEndpoint>();
 
-        var game = new Game("Halo", "desc", 100m, DateTime.Today, ClassificacaoEtaria.Livre);
-        gameRepo.GetByIdAsNoTrackingAsync(game.Id, Arg.Any<CancellationToken>()).Returns(game);
+        var game = new Game(
+            "Halo",
+            "desc",
+            100m,
+            DateTime.Today,
+            ClassificacaoEtaria.Livre);
 
-        var handler = new PurchaseGameHandler(gameRepo, orderRepo, userGameRepo, publisher, NullLogger<PurchaseGameHandler>.Instance);
+        gameRepo.GetByIdAsNoTrackingAsync(
+                game.Id,
+                Arg.Any<CancellationToken>())
+            .Returns(game);
+
+        var handler = new PurchaseGameHandler(
+            gameRepo,
+            orderRepo,
+            userGameRepo,
+            publisher,
+            NullLogger<PurchaseGameHandler>.Instance);
 
         var userId = Guid.NewGuid();
-        var command = new PurchaseGameCommand(game.Id) { UserId = userId };
 
+        var command = new PurchaseGameCommand(game.Id)
+        {
+            UserId = userId
+        };
+
+        // Act
         var result = await handler.Handle(command, CancellationToken.None);
 
+        // Assert
         result.IsSuccess.ShouldBeTrue();
         result.Value.GameId.ShouldBe(game.Id);
         result.Value.Price.ShouldBe(100m);
-        orderRepo.Received(1).Add(Arg.Is<Order>(o => o.UserId == userId && o.GameId == game.Id));
+
+        orderRepo.Received(1).Add(
+            Arg.Is<Order>(o =>
+                o.UserId == userId &&
+                o.GameId == game.Id));
+
         await publisher.Received(1).Publish(
-            Arg.Is<OrderPlacedEvent>(e => e.UserId == userId && e.GameId == game.Id && e.Price == 100m),
+            Arg.Is<OrderPlacedEvent>(e =>
+                e.UserId == userId &&
+                e.GameId == game.Id &&
+                e.Price == 100m),
             Arg.Any<CancellationToken>());
     }
 }
