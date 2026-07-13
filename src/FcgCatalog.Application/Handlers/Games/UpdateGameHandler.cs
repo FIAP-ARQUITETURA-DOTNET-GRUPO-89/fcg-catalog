@@ -22,6 +22,12 @@ public sealed partial class UpdateGameHandler(
             throw new NotFoundException($"Jogo {request.Id} não encontrado.");
         }
 
+        if (await repository.ExistsByNameAsync(request.Nome, request.Id, cancellationToken))
+        {
+            LogGameNameAlreadyExists(logger, request.Nome);
+            throw new AlreadyExistsException("Já existe um jogo cadastrado com esse nome.");
+        }
+
         game.Atualizar(
             request.Nome,
             request.Descricao,
@@ -41,4 +47,11 @@ public sealed partial class UpdateGameHandler(
     private static partial void LogGameNotFound(
         ILogger logger,
         Guid gameId);
+
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "Atualização não realizada. Já existe um jogo cadastrado com o nome {GameName}.")]
+    private static partial void LogGameNameAlreadyExists(
+        ILogger logger,
+        string gameName);
 }

@@ -1,7 +1,6 @@
 ﻿using FluentValidation;
 using FcgCatalog.Application.Commands.Games;
 using FcgCatalog.Domain.Enums;
-using FcgCatalog.Domain.Repositories.Games;
 
 namespace FcgCatalog.Application.Validators.Games;
 
@@ -10,13 +9,11 @@ public class UpdateGameValidator : AbstractValidator<UpdateGameCommand>
     private static readonly ClassificacaoEtaria[] ValoresValidos =
         Enum.GetValues<ClassificacaoEtaria>();
 
-    public UpdateGameValidator(IGameRepository repository)
+    public UpdateGameValidator()
     {
         RuleFor(x => x.Nome)
             .NotEmpty()
-            .MaximumLength(100)
-            .MustAsync(async (command, nome, ct) => !await repository.ExistsByNameAsync(nome, command.Id, ct))
-                .WithMessage("Já existe um jogo cadastrado com esse nome.");
+            .MaximumLength(100);
 
         RuleFor(x => x.Descricao)
             .NotEmpty()
