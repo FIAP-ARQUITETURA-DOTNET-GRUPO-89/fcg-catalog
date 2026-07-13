@@ -2,7 +2,7 @@ namespace FcgCatalog.Domain.Enums;
 
 public enum OrderStatus
 {
-    PendingPayment = 1,
-    Approved = 2,
-    Rejected = 3
+    PendingPayment = 0,
+    Approved = 1,
+    Rejected = 2
 }

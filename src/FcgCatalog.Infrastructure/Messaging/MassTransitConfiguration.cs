@@ -20,14 +20,7 @@ public static class MassTransitConfiguration
 
             x.UsingRabbitMq((context, cfg) =>
             {
-                var connectionString = configuration.GetConnectionString("Rabbitmq");
-
-                if (string.IsNullOrWhiteSpace(connectionString))
-                {
-                    throw new InvalidOperationException("RabbitMQ connection string não configurada.");
-                }
-
-                cfg.Host(connectionString);
+                cfg.Host(configuration.GetConnectionString("rabbitmq"));
 
                 var retry = context.GetRequiredService<IOptions<MassTransitSettings>>().Value;
 
@@ -55,16 +48,9 @@ public static class MassTransitConfiguration
     {
         services.AddMassTransit(x =>
         {
-            x.UsingRabbitMq((context, cfg) =>
+            x.UsingRabbitMq((_, cfg) =>
             {
-                var connectionString = configuration.GetConnectionString("Rabbitmq");
-
-                if (string.IsNullOrWhiteSpace(connectionString))
-                {
-                    throw new InvalidOperationException("RabbitMQ connection string não configurada.");
-                }
-
-                cfg.Host(connectionString);
+                cfg.Host(configuration.GetConnectionString("rabbitmq"));
             });
         });
 

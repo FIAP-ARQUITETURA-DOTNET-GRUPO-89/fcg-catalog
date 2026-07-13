@@ -1,4 +1,4 @@
-using FcgCatalog.Api.Endpoints;
+﻿using FcgCatalog.Api.Endpoints;
 using FcgCatalog.Api.Middlewares;
 using FcgCatalog.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
@@ -39,7 +39,8 @@ public static class AppConfigureExtensions
         app.UseAuthentication();
         app.UseAuthorization();
 
-        app.MapOrdersEndpoints();
+        app.MapGamesEndpoints();
+        app.MapUserLibraryEndpoints();
 
         app.MapHealthChecks("/health");
         app.MapHealthChecks("/ready");

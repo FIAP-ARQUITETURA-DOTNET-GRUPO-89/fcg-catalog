@@ -12,27 +12,20 @@ public class OrderEntityConfiguration : IEntityTypeConfiguration<Order>
 
         builder.HasKey(x => x.Id);
 
-        builder.Property(x => x.Customer)
-            .HasMaxLength(100)
-            .IsRequired();
-
-        builder.Property(x => x.TotalAmount)
-            .HasPrecision(18, 2)
-            .IsRequired();
+        builder.Property(x => x.UserId).IsRequired();
+        builder.Property(x => x.GameId).IsRequired();
+        builder.Property(x => x.Price).IsRequired().HasPrecision(18, 2);
 
         builder.Property(x => x.Status)
-            .HasConversion<int>()
-            .IsRequired();
+            .IsRequired()
+            .HasConversion<string>()
+            .HasMaxLength(20);
 
-        builder.Property(x => x.CreatedAt)
-            .IsRequired();
+        builder.Property(x => x.ProcessedAt);
+        builder.Property(x => x.CreatedAt).IsRequired();
+        builder.Property(x => x.UpdatedAt);
 
-        builder.ComplexProperty(p => p.DeliveryAddress, n =>
-        {
-            n.Property(e => e.Street).HasColumnName("Street").HasMaxLength(150).IsRequired();
-            n.Property(e => e.City).HasColumnName("City").HasMaxLength(100).IsRequired();
-            n.Property(e => e.State).HasColumnName("State").HasMaxLength(2).IsRequired();
-            n.Property(e => e.Cep).HasColumnName("Cep").HasMaxLength(8).IsRequired();
-        });
+        builder.HasIndex(x => x.UserId);
+        builder.HasIndex(x => new { x.UserId, x.GameId });
     }
 }

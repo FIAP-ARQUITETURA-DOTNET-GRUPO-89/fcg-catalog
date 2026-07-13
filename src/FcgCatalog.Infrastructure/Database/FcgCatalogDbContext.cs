@@ -5,7 +5,9 @@ namespace FcgCatalog.Infrastructure.Database;
 
 public class FcgCatalogDbContext(DbContextOptions<FcgCatalogDbContext> options) : DbContext(options)
 {
+    public DbSet<Game> Games => Set<Game>();
     public DbSet<Order> Orders => Set<Order>();
+    public DbSet<UserGame> UserGames => Set<UserGame>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
         => modelBuilder.ApplyConfigurationsFromAssembly(typeof(FcgCatalogDbContext).Assembly);
