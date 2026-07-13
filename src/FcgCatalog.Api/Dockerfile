@@ -25,15 +25,17 @@ COPY . .
 RUN dotnet publish src/FcgCatalog.Api/FcgCatalog.Api.csproj \
     -c $BUILD_CONFIGURATION \
     -o /app/publish \
+    --no-restore \
     /p:UseAppHost=false
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 
-FROM base AS final
 WORKDIR /app
+
+USER $APP_UID
 
 EXPOSE 7030
 
 COPY --from=build /app/publish .
 
-ENTRYPOINT ["dotnet","FcgCatalog.Api.dll"]
+ENTRYPOINT ["dotnet", "FcgCatalog.Api.dll"]
