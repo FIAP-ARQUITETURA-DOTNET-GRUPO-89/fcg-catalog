@@ -1,4 +1,4 @@
-using FcgCatalog.Domain.Entities;
+﻿using FcgCatalog.Domain.Entities;
 using FcgCatalog.Domain.Enums;
 using FcgCatalog.Infrastructure.Database;
 
@@ -20,7 +20,7 @@ public static class TestDataSeeder
             nome: "Jogo Teste",
             descricao: "Descrição do jogo de teste para integração.",
             preco: 99.90m,
-            dataLancamento: new DateTime(2024, 1, 1),
+            dataLancamento: new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc),
             classificacaoEtaria: ClassificacaoEtaria.Livre
         );
 

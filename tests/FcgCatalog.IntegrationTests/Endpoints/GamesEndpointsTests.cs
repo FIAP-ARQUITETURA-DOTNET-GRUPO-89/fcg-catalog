@@ -23,7 +23,7 @@ public class GamesEndpointsTests(IntegrationTestFixture fixture)
             "Halo",
             "FPS lendário",
             199.90m,
-            new DateTime(2001, 11, 15),
+            new DateTime(2001, 11, 15, 0, 0, 0, DateTimeKind.Utc),
             ClassificacaoEtaria.Dezesseis);
 
         // Act
@@ -48,7 +48,7 @@ public class GamesEndpointsTests(IntegrationTestFixture fixture)
             "Doom",
             "FPS",
             89.90m,
-            new DateTime(1993, 12, 10),
+            new DateTime(1993, 12, 10, 0, 0, 0, DateTimeKind.Utc),
             ClassificacaoEtaria.Dezesseis);
 
         // Act
@@ -68,7 +68,7 @@ public class GamesEndpointsTests(IntegrationTestFixture fixture)
             "Mario",
             "Plataforma",
             159.90m,
-            new DateTime(1985, 9, 13),
+            new DateTime(1985, 9, 13, 0, 0, 0, DateTimeKind.Utc),
             ClassificacaoEtaria.Livre);
 
         // Act
@@ -92,7 +92,7 @@ public class GamesEndpointsTests(IntegrationTestFixture fixture)
                 "Halo",
                 "FPS",
                 199.90m,
-                new DateTime(2001, 11, 15),
+                new DateTime(2001, 11, 15, 0, 0, 0, DateTimeKind.Utc),
                 ClassificacaoEtaria.Dezesseis));
 
         var customer = await TestAuthHelper.CreateUserCustomerAsync(fixture);
@@ -118,7 +118,7 @@ public class GamesEndpointsTests(IntegrationTestFixture fixture)
                 "Tetris",
                 "Puzzle",
                 19.90m,
-                new DateTime(1984, 6, 6),
+                new DateTime(1984, 6, 6, 0, 0, 0, DateTimeKind.Utc),
                 ClassificacaoEtaria.Livre));
 
         var game = await created.Content.ReadFromJsonAsync<GameResponse>();
@@ -146,7 +146,7 @@ public class GamesEndpointsTests(IntegrationTestFixture fixture)
                 "Pong",
                 "Clássico",
                 9.90m,
-                new DateTime(1972, 11, 29),
+                new DateTime(1972, 11, 29, 0, 0, 0, DateTimeKind.Utc),
                 ClassificacaoEtaria.Livre));
 
         var game = await created.Content.ReadFromJsonAsync<GameResponse>();
