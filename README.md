@@ -1,150 +1,79 @@
 ﻿# 🚀 FcgCatalog — CatalogAPI
 
-Microsserviço de **Catálogo de Jogos** da plataforma **FIAP Cloud Games (FCG)**. Faz parte da decomposição em microsserviços orientados a eventos (Fase 2 do Tech Challenge), substituindo a parte de jogos do monolito original.
+Microsserviço de **Catálogo de Jogos** da plataforma **FIAP Cloud Games (FCG)**. Faz parte da decomposição em microsserviços orientados a eventos (Tech Challenge FIAP), sendo responsável pelo gerenciamento do catálogo de jogos, criação de pedidos de compra e manutenção da biblioteca dos usuários após a confirmação do pagamento.
+
+---
 
 ## 🎯 Responsabilidades
 
-- CRUD de jogos do catálogo (criar, listar, obter, atualizar, alterar preço, inativar).
-- Iniciar o fluxo de compra publicando **`OrderPlacedEvent`**.
-- Consumir **`PaymentProcessedEvent`** (via Worker) e adicionar o jogo à biblioteca do usuário quando o pagamento for `Approved`. Pagamentos `Rejected` não alteram a biblioteca.
-- Manter a biblioteca por usuário (`UserGame`), com idempotência por `OrderId` e unicidade `(UserId, GameId)`.
+- CRUD de jogos do catálogo.
+- Criar pedidos de compra.
+- Publicar o evento `OrderPlacedEvent`.
+- Consumir `PaymentProcessedEvent` (via Worker).
+- Adicionar jogos à biblioteca do usuário após pagamentos aprovados.
+- Garantir idempotência por `OrderId` e unicidade `(UserId, GameId)`.
+
+---
 
 ## 🔄 Fluxo de Compra
 
-```
+```text
 [Usuário] POST /api/orders
             │
             ▼
-   CatalogAPI cria Order(PendingPayment)
+   CatalogAPI cria Order (PendingPayment)
             │
-            └──► OrderPlacedEvent ─► [PaymentsAPI]
+            └──► OrderPlacedEvent ─► PaymentsAPI
                                           │
                   PaymentProcessedEvent ◄─┘
                             │
                             ▼
-              CatalogWorker (PaymentProcessedConsumer)
+                CatalogWorker (Consumer)
                             │
                             ▼
-            Order.Approve()  +  UserGame.Add()      (idempotente)
+          Order.Approve() + UserGame.Add()
 ```
-
-## 🔌 Endpoints — `/api/games`
-
-| Verbo  | Rota                          | Policy           | Descrição                          |
-| ------ | ----------------------------- | ---------------- | ---------------------------------- |
-| POST   | `/api/games`                  | `AdminPolicy`    | Cria um novo jogo                  |
-| GET    | `/api/games?Page&PageSize`    | `CustomerPolicy` | Lista paginada de jogos ativos     |
-| GET    | `/api/games/{id}`             | `CustomerPolicy` | Obtém um jogo por identificador    |
-| PUT    | `/api/games/{id}`             | `AdminPolicy`    | Atualiza dados do jogo             |
-| PATCH  | `/api/games/{id}/price`       | `AdminPolicy`    | Altera o preço de um jogo          |
-| DELETE | `/api/games/{id}`             | `AdminPolicy`    | Inativa um jogo (soft delete)      |
-
-## 🛒 Endpoints — `/api/library`
-
-| Verbo | Rota                       | Policy           | Descrição                                                         |
-| ----- | -------------------------- | ---------------- | ----------------------------------------------------------------- |
-| POST  | `/api/orders`              | `CustomerPolicy` | Inicia a compra de um jogo (publica `OrderPlacedEvent`)           |
-| GET   | `/api/library`             | `CustomerPolicy` | Lista a biblioteca do usuário autenticado                         |
-
-## 🔧 Variáveis de Ambiente
-
-| Variável                            | Descrição                                                |
-| ----------------------------------- | -------------------------------------------------------- |
-| `ConnectionStrings__Default`        | Connection string do PostgreSQL do CatalogAPI            |
-| `ConnectionStrings__rabbitmq`       | Connection string do RabbitMQ (publisher de eventos)     |
-| `JwtSettings__Issuer`               | Issuer esperado no JWT emitido pelo UsersAPI             |
-| `JwtSettings__SecurityKey`          | Chave simétrica utilizada para validar o JWT             |
-| `JwtSettings__ExpirationHours`      | Tempo de expiração (utilizado apenas para testes)        |
-
-> Em produção (Kubernetes), `ConnectionStrings__*` e `JwtSettings__SecurityKey` ficam em `Secret`; demais opções em `ConfigMap`.
 
 ---
 
-Template original do projeto (ArchForge):
+## 🔌 Endpoints
 
-## 📑 Sumário
+### Jogos (`/api/games`)
 
-- [📋 Tecnologias Utilizadas](#-tecnologias-utilizadas)
-- [🏛 Arquitetura](#-arquitetura)
-- [📁 Estrutura da Solução](#-estrutura-da-solução)
-- [▶️ Executando Localmente](#️-executando-localmente)
-- [🗄 Banco de Dados](#-banco-de-dados)
-- [🔐 Autenticação JWT](#-autenticação-jwt)
-  - [Gerando Token Manualmente](#gerando-token-manualmente)
-  - [Policies Disponíveis](#policies-disponíveis)
-- [📡 Coleção Postman](#-coleção-postman)
-- [🧪 Executando Testes](#-executando-testes)
-- [📚 Documentação](#-documentação)
-  - [ADRs](#adrs)
-  - [Diagramas](#diagramas)
-  - [Linguagem Ubíqua](#linguagem-ubíqua)
-- [🎯 Objetivos do Template](#-objetivos-do-template)
+| Verbo | Rota | Autorização | Descrição |
+|-------|------|-------------|-----------|
+| POST | `/api/games` | Admin | Cria um jogo |
+| GET | `/api/games` | Customer | Lista jogos paginados |
+| GET | `/api/games/{id}` | Customer | Obtém um jogo |
+| PUT | `/api/games/{id}` | Admin | Atualiza um jogo |
+| PATCH | `/api/games/{id}/price` | Admin | Atualiza o preço |
+| DELETE | `/api/games/{id}` | Admin | Inativa um jogo |
 
-## 📋 Tecnologias Utilizadas
+### Pedidos (`/api/orders`)
 
-- .NET 10
-- ASP.NET Core Minimal API
-- .NET Aspire
-- MediatR
-- FluentValidation
-- Mapperly
-- Entity Framework Core
-- PostgreSQL
-- JWT Authentication
-- Health Checks
-- Serilog
-- xUnit
-- Shouldly
-- NSubstitute
-- Aspire Testing
-- Respawn
+| Verbo | Rota | Autorização | Descrição |
+|-------|------|-------------|-----------|
+| POST | `/api/orders` | Customer | Cria um pedido de compra e publica `OrderPlacedEvent` |
 
-## 🏛 Arquitetura
+### Biblioteca (`/api/library`)
 
-Este template segue princípios de:
+| Verbo | Rota | Autorização | Descrição |
+|-------|------|-------------|-----------|
+| GET | `/api/library` | Customer | Lista os jogos da biblioteca do usuário autenticado |
 
-- Clean Architecture
-- Domain-Driven Design (DDD)
-- CQRS
-- SOLID
-- Separation of Concerns
+---
 
-### Camadas
+## 🔧 Variáveis de Ambiente
 
-| Projeto                    | Responsabilidade                                       |
-| -------------------------- | ------------------------------------------------------ |
-| FcgCatalog.Api             | Endpoints, Middlewares e Configurações                 |
-| FcgCatalog.Application     | Casos de uso, Commands, Queries, Validators e Handlers |
-| FcgCatalog.Domain          | Entidades, Regras de Negócio e Contratos               |
-| FcgCatalog.Infrastructure  | Persistência, EF Core e Repositórios                   |
-| FcgCatalog.IoC             | Registro de dependências                               |
-| FcgCatalog.SharedKernel    | Componentes compartilhados                             |
-| FcgCatalog.ServiceDefaults | Configurações compartilhadas Aspire                    |
-| FcgCatalog.AppHost         | Orquestração Aspire                                    |
+| Variável | Descrição |
+|----------|-----------|
+| `ConnectionStrings__Default` | Banco PostgreSQL |
+| `ConnectionStrings__rabbitmq` | RabbitMQ |
+| `JwtSettings__Issuer` | Issuer esperado do JWT |
+| `JwtSettings__SecurityKey` | Chave utilizada na validação do JWT |
+| `JwtSettings__ExpirationHours` | Tempo de expiração do token |
 
-## 📁 Estrutura da Solução
-
-```text
-src/
-├── FcgCatalog.Api
-├── FcgCatalog.AppHost
-├── FcgCatalog.Application
-├── FcgCatalog.Domain
-├── FcgCatalog.Infrastructure
-├── FcgCatalog.IoC
-├── FcgCatalog.ServiceDefaults
-└── FcgCatalog.SharedKernel
-
-tests/
-├── FcgCatalog.UnitTests
-└── FcgCatalog.IntegrationTests
-
-docs/
-├── adrs
-├── api-collection
-├── diagrams
-└── linguagem-ubiqua
-```
+---
 
 ## ▶️ Executando Localmente
 
@@ -160,207 +89,71 @@ dotnet restore
 dotnet build
 ```
 
-### Executar com Aspire
+### Subir a infraestrutura
 
 ```bash
-dotnet run --project src/FcgCatalog.AppHost
+docker compose up -d
 ```
 
-### Executar apenas a API
+### Executar a API
 
 ```bash
 dotnet run --project src/FcgCatalog.Api
 ```
 
-## 🗄 Banco de Dados
-
-Criar migration:
+### Executar o AppHost
 
 ```bash
-dotnet ef migrations add MinhaMigration -p src/FcgCatalog.Infrastructure -s src/FcgCatalog.Api --output-dir Database/Migrations
+dotnet run --project src/FcgCatalog.AppHost
 ```
 
-Aplicar migrations:
-
-```bash
-dotnet ef database update -p src/FcgCatalog.Infrastructure -s src/FcgCatalog.Api
-```
-
-## 🔐 Autenticação JWT
-
-O template já possui autenticação JWT configurada.
-
-Configuração padrão:
-
-```json
-"JwtSettings": {
-    "Issuer": "FcgCatalog-Issuer",
-    "SecurityKey": "FcgCatalog_Secret_Key_2026_High_Security_Token",
-    "ExpirationHours": 2
-}
-```
-
-### Gerando Token Manualmente
-
-Acesse:
-
-🌐 https://jwt.io
-
-#### Header
-
-```json
-{
-  "alg": "HS256",
-  "typ": "JWT"
-}
-```
-
-#### Payload para perfil Admin
-
-```json
-{
-  "iss": "FcgCatalog-Issuer",
-  "sub": "1",
-  "name": "Administrador",
-  "role": "Admin",
-  "exp": 1893456000
-}
-```
-
-#### Payload para perfil Customer
-
-```json
-{
-  "iss": "FcgCatalog-Issuer",
-  "sub": "2",
-  "name": "Cliente",
-  "role": "Customer",
-  "exp": 1893456000
-}
-```
-
-#### Secret
-
-```text
-FcgCatalog_Secret_Key_2026_High_Security_Token
-```
-
-Após gerar o token, utilize:
-
-```http
-Authorization: Bearer {TOKEN}
-```
-
-### Policies Disponíveis
-
-| Policy         | Roles Permitidas |
-| -------------- | ---------------- |
-| CustomerPolicy | Admin, Customer  |
-| AdminPolicy    | Admin            |
-
-## 📡 Coleção Postman
-
-A coleção da API está disponível em:
-
-```text
-docs/api-collection/
-```
-
-Importe o arquivo `.json` no Postman para iniciar os testes rapidamente.
+---
 
 ## 🧪 Executando Testes
 
-### Todos os testes
+Todos os testes
 
 ```bash
 dotnet test
 ```
 
-### Unitários
+Somente testes unitários
 
 ```bash
 dotnet test tests/FcgCatalog.UnitTests
 ```
 
-### Integração
+Somente testes de integração
 
 ```bash
 dotnet test tests/FcgCatalog.IntegrationTests
 ```
 
-## 📊 Cobertura de Testes
+---
 
-O template já possui suporte à geração de cobertura de testes utilizando Coverlet.
+## 🏛 Arquitetura
 
-### Gerar cobertura dos testes unitários
+O CatalogAPI foi desenvolvido utilizando:
 
-```bash
-dotnet test tests/FcgCatalog.UnitTests --collect:"XPlat Code Coverage" --settings .runsettings
-```
+- Clean Architecture
+- Domain-Driven Design (DDD)
+- CQRS
+- Event-Driven Architecture
+- MediatR
+- FluentValidation
 
-### Instalar o ReportGenerator
+---
 
-Caso ainda não possua a ferramenta instalada:
+## 📋 Tecnologias
 
-```bash
-dotnet tool install -g dotnet-reportgenerator-globaltool
-```
-
-### Gerar relatório HTML
-
-```bash
-reportgenerator -reports:"**/coverage.cobertura.xml" -targetdir:"coverage-report" -reporttypes:"Html;MarkdownSummary"
-```
-
-### Visualizar relatório
-
-Abra o arquivo:
-
-```text
-coverage-report/index.html
-```
-
-## 📚 Documentação
-
-A documentação do projeto fica centralizada na pasta:
-
-```text
-docs/
-```
-
-### ADRs
-
-```text
-docs/adrs
-```
-
-Registro das decisões arquiteturais.
-
-### Diagramas
-
-```text
-docs/diagrams
-```
-
-Diagramas de arquitetura e fluxo.
-
-### Linguagem Ubíqua
-
-```text
-docs/linguagem-ubiqua
-```
-
-Glossário do domínio.
-
-## 🎯 Objetivos do Template
-
-Este template foi criado para fornecer:
-
-- Estrutura pronta
-- Padronização entre serviços
-- Alta cobertura de testes
-- Baixo tempo de setup
-- Facilidade de manutenção
-- Evolução arquitetural consistente
-
-Gerado com ❤️ utilizando ArchForge.
+- .NET 10
+- ASP.NET Core Minimal API
+- Entity Framework Core
+- PostgreSQL
+- RabbitMQ
+- MassTransit
+- MediatR
+- FluentValidation
+- JWT Authentication
+- Serilog
+- xUnit
