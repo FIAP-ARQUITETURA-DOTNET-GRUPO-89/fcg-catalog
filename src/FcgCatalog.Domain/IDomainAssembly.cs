@@ -1,3 +1,3 @@
 namespace FcgCatalog.Domain;
 
-public interface IDomainEntryPoint;
+public interface IDomainAssembly;

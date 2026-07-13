@@ -15,8 +15,8 @@ COPY src/FcgCatalog.Application/FcgCatalog.Application.csproj src/FcgCatalog.App
 COPY src/FcgCatalog.Domain/FcgCatalog.Domain.csproj src/FcgCatalog.Domain/
 COPY src/FcgCatalog.Infrastructure/FcgCatalog.Infrastructure.csproj src/FcgCatalog.Infrastructure/
 COPY src/FcgCatalog.IoC/FcgCatalog.IoC.csproj src/FcgCatalog.IoC/
-COPY src/FcgCatalog.SharedKernel/FcgCatalog.SharedKernel.csproj src/FcgCatalog.SharedKernel/
 COPY src/FcgCatalog.ServiceDefaults/FcgCatalog.ServiceDefaults.csproj src/FcgCatalog.ServiceDefaults/
+COPY src/FcgCatalog.SharedKernel/FcgCatalog.SharedKernel.csproj src/FcgCatalog.SharedKernel/
 
 RUN dotnet restore src/FcgCatalog.Api/FcgCatalog.Api.csproj
 
@@ -29,6 +29,7 @@ RUN dotnet publish src/FcgCatalog.Api/FcgCatalog.Api.csproj \
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 
+FROM base AS final
 WORKDIR /app
 
 USER $APP_UID
