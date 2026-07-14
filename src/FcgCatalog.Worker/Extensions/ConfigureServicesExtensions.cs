@@ -1,4 +1,4 @@
-using FcgCatalog.IoC;
+﻿using FcgCatalog.IoC;
 using FcgCatalog.Infrastructure.Messaging;
 using FcgCatalog.Worker.Consumers;
 
@@ -12,7 +12,7 @@ public static class ConfigureServicesExtensions
 
         services.AddMassTransitRabbitMq(configuration, x =>
         {
-            x.AddConsumer<PaymentProcessedConsumer>();
+            x.AddConsumer<PaymentProcessedConsumer>().Endpoint(e => e.Name = "catalog-payment-processed");
         });
 
         return services;
