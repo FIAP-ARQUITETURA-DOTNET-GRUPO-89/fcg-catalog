@@ -36,7 +36,7 @@ spec:
       containers:
         - name: fcg-catalog-worker
 
-          image: jondamiao/fcg-catalog-worker:1.0.0-preview.1
+          image: jondamiao/fcg-catalog-worker:1.0.0-preview.3
           imagePullPolicy: IfNotPresent
 
           envFrom:
