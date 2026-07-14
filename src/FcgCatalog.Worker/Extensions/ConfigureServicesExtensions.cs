@@ -12,7 +12,7 @@ public static class ConfigureServicesExtensions
 
         services.AddMassTransitRabbitMq(configuration, x =>
         {
-            x.AddConsumer<PaymentProcessedConsumer>().Endpoint(e => e.Name = "catalog-payment-processed");
+            x.AddConsumer<PaymentProcessedConsumer>().Endpoint(e => e.Name = "catalog-payment-processed-events");
         });
 
         return services;
