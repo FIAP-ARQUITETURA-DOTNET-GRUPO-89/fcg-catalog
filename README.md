@@ -89,23 +89,23 @@ dotnet restore
 dotnet build
 ```
 
-### Subir a infraestrutura
+### Executar a aplicação
 
 ```bash
-docker compose up -d
+dotnet run --project src/FcgCatalog.AppHost
 ```
 
-### Executar a API
+O Aspire AppHost inicia automaticamente a infraestrutura necessária para a aplicação (API, Worker, PostgreSQL e RabbitMQ), desde que o Docker Desktop esteja em execução.
+
+Após a inicialização, acesse o Dashboard do Aspire pela URL exibida no console.
+
+### Executar apenas a API (opcional)
 
 ```bash
 dotnet run --project src/FcgCatalog.Api
 ```
 
-### Executar o AppHost
-
-```bash
-dotnet run --project src/FcgCatalog.AppHost
-```
+> **Observação:** ao executar apenas a API, a infraestrutura (PostgreSQL e RabbitMQ) deve estar disponível.
 
 ---
 
@@ -147,6 +147,7 @@ O CatalogAPI foi desenvolvido utilizando:
 ## 📋 Tecnologias
 
 - .NET 10
+- .NET Aspire
 - ASP.NET Core Minimal API
 - Entity Framework Core
 - PostgreSQL
