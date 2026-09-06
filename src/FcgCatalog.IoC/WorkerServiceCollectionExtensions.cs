@@ -1,4 +1,4 @@
-using FcgCatalog.Application;
+﻿using FcgCatalog.Application;
 using FcgCatalog.Domain;
 using FcgCatalog.Domain.Repositories.Games;
 using FcgCatalog.Domain.Repositories.Library;
@@ -33,5 +33,6 @@ public static class WorkerServiceCollectionExtensions
         services.AddScoped<IGameRepository, GameRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IUserGameRepository, UserGameRepository>();
+        services.AddScoped<IGameReviewRepository, GameReviewRepository>();
     }
 }

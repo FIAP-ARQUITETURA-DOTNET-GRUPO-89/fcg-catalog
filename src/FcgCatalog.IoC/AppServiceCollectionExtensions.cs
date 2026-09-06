@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using MediatR;
 using FcgCatalog.Application;
 using FcgCatalog.Domain;
@@ -42,5 +42,6 @@ public static class AppServiceCollectionExtensions
         services.AddScoped<IGameRepository, GameRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IUserGameRepository, UserGameRepository>();
+        services.AddScoped<IGameReviewRepository, GameReviewRepository>();
     }
 }
