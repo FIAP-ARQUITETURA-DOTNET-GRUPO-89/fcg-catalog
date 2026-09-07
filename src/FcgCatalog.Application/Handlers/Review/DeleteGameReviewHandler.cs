@@ -6,7 +6,7 @@ using OperationResult;
 
 namespace FcgCatalog.Application.Handlers.Reviews;
 
-public sealed class DeleteGameReviewCommandHandler(
+public sealed class DeleteGameReviewHandler(
     IGameReviewRepository reviewRepository)
 : IRequestHandler<DeleteGameReviewCommand, Result<bool>>
 {

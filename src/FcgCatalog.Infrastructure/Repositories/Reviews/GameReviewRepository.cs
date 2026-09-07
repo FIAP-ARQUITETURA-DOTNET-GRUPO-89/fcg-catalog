@@ -11,7 +11,10 @@ public sealed class GameReviewRepository : IGameReviewRepository
 
     public GameReviewRepository(IConfiguration configuration)
     {
-        var connectionString = configuration.GetConnectionString("MongoDb") ?? "mongodb://localhost:27017";
+        var connectionString = configuration.GetConnectionString("mongodb")
+                               ?? configuration.GetConnectionString("MongoDb")
+                               ?? "mongodb://localhost:27017";
+
         var mongoUrl = MongoUrl.Create(connectionString);
         var mongoClient = new MongoClient(mongoUrl);
         var database = mongoClient.GetDatabase(mongoUrl.DatabaseName ?? "fcg_catalog_db");

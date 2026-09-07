@@ -6,7 +6,7 @@ using OperationResult;
 
 namespace FcgCatalog.Application.Handlers.Reviews;
 
-public sealed class UpdateGameReviewCommandHandler(
+public sealed class UpdateGameReviewHandler(
     IGameReviewRepository reviewRepository)
 : IRequestHandler<UpdateGameReviewCommand, Result<bool>>
 {

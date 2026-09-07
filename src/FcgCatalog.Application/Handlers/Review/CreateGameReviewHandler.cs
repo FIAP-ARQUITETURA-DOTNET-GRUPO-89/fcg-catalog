@@ -10,10 +10,10 @@ using OperationResult;
 
 namespace FcgCatalog.Application.Handlers.Reviews;
 
-public sealed partial class CreateGameReviewCommandHandler(
+public sealed partial class CreateGameReviewHandler(
     IGameReviewRepository reviewRepository,
     IGameRepository gameRepository,
-    ILogger<CreateGameReviewCommandHandler> logger)
+    ILogger<CreateGameReviewHandler> logger)
 : IRequestHandler<CreateGameReviewCommand, Result<GameReviewResponse>>
 {
     public async Task<Result<GameReviewResponse>> Handle(CreateGameReviewCommand request, CancellationToken cancellationToken)

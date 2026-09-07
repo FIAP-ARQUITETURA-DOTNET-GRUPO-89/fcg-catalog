@@ -7,7 +7,7 @@ using OperationResult;
 
 namespace FcgCatalog.Application.Handlers.Reviews;
 
-public sealed class GetReviewsByGameIdQueryHandler(
+public sealed class GetReviewsByGameIdHandler(
     IGameReviewRepository reviewRepository)
 : IRequestHandler<GetReviewsByGameIdQuery, Result<IReadOnlyList<GameReviewResponse>>>
 {
