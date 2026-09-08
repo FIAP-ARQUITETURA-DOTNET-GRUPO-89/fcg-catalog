@@ -1,8 +1,9 @@
-﻿using MediatR;
+﻿using System.Security.Claims;
 using FcgCatalog.Api.Extensions;
 using FcgCatalog.Application.Commands.Reviews;
 using FcgCatalog.Application.Queries.Reviews;
 using FcgCatalog.Application.Responses.Reviews;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FcgCatalog.Api.Endpoints;
@@ -45,10 +46,31 @@ public static class GameReviewEndpoints
             .ProducesProblem(StatusCodes.Status404NotFound);
     }
 
-    private static async Task<IResult> CreateGameReviewAsync([FromRoute] Guid jogoId, [FromBody] CreateGameReviewCommand command, IMediator mediator, CancellationToken cancellationToken)
+    private static async Task<IResult> CreateGameReviewAsync(
+        [FromRoute] Guid jogoId,
+        [FromBody] CreateGameReviewCommand command,
+        HttpContext httpContext,
+        IMediator mediator,
+        CancellationToken cancellationToken)
     {
-        var commandWithJogoId = command with { JogoId = jogoId };
-        var result = await mediator.Send(commandWithJogoId, cancellationToken);
+        Guid usuarioId = Guid.Empty;
+
+        var userIdClaim = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)
+                       ?? httpContext.User.FindFirst("sub")
+                       ?? httpContext.User.FindFirst("id");
+
+        if (userIdClaim != null && Guid.TryParse(userIdClaim.Value, out var parsedId))
+        {
+            usuarioId = parsedId;
+        }
+
+        if (usuarioId == Guid.Empty)
+        {
+            return Results.Unauthorized();
+        }
+
+        var finalCommand = command with { JogoId = jogoId, UsuarioId = usuarioId };
+        var result = await mediator.Send(finalCommand, cancellationToken);
         return result.ToCreatedResult(value => $"/api/games/{jogoId}/reviews/{value!.Id}");
     }
 
