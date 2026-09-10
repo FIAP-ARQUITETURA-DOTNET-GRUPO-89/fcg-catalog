@@ -1,6 +1,5 @@
 ﻿using FcgCatalog.Domain.Entities;
 using FcgCatalog.Domain.Repositories.Games;
-using Microsoft.Extensions.Configuration;
 using MongoDB.Driver;
 
 namespace FcgCatalog.Infrastructure.Repositories.Games;
@@ -9,17 +8,8 @@ public sealed class GameReviewRepository : IGameReviewRepository
 {
     private readonly IMongoCollection<GameReview> _reviewsCollection;
 
-    public GameReviewRepository(IConfiguration configuration)
+    public GameReviewRepository(IMongoDatabase database)
     {
-        var connectionString = configuration.GetConnectionString("fcg-catalog-db")
-                               ?? configuration.GetConnectionString("mongodb")
-                               ?? configuration.GetConnectionString("MongoDb")
-                               ?? "mongodb://localhost:27017";
-
-        var mongoUrl = MongoUrl.Create(connectionString);
-        var mongoClient = new MongoClient(mongoUrl);
-        var database = mongoClient.GetDatabase(mongoUrl.DatabaseName ?? "fcg_catalog_db");
-
         _reviewsCollection = database.GetCollection<GameReview>("game_reviews");
     }
 

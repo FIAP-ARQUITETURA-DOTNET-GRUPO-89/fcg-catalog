@@ -52,12 +52,12 @@ public class GameReviewEndpointsTests(IntegrationTestFixture fixture)
             "Excelente jogo, recomendo muito!");
 
         // Act
-        var response = await customerClient.PostAsJsonAsync($"/api/games/{gameId}/reviews", command);
+        var response = await customerClient.PostAsJsonAsync($"/api/games/{gameId}/reviews", command, TestContext.Current.CancellationToken);
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.Created);
 
-        var body = await response.Content.ReadFromJsonAsync<GameReviewResponse>();
+        var body = await response.Content.ReadFromJsonAsync<GameReviewResponse>(TestContext.Current.CancellationToken);
         body.ShouldNotBeNull();
         body!.Nota.ShouldBe(5);
         body.Comentario.ShouldBe("Excelente jogo, recomendo muito!");
@@ -77,7 +77,7 @@ public class GameReviewEndpointsTests(IntegrationTestFixture fixture)
             "Bom jogo");
 
         // Act
-        var response = await client.PostAsJsonAsync($"/api/games/{jogoId}/reviews", command);
+        var response = await client.PostAsJsonAsync($"/api/games/{jogoId}/reviews", command, TestContext.Current.CancellationToken);
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
@@ -98,15 +98,15 @@ public class GameReviewEndpointsTests(IntegrationTestFixture fixture)
             5,
             "Incrível!");
 
-        await customerClient.PostAsJsonAsync($"/api/games/{gameId}/reviews", command);
+        await customerClient.PostAsJsonAsync($"/api/games/{gameId}/reviews", command, TestContext.Current.CancellationToken);
 
         // Act
-        var response = await customerClient.GetAsync($"/api/games/{gameId}/reviews");
+        var response = await customerClient.GetAsync($"/api/games/{gameId}/reviews", TestContext.Current.CancellationToken);
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
 
-        var body = await response.Content.ReadFromJsonAsync<IReadOnlyList<GameReviewResponse>>();
+        var body = await response.Content.ReadFromJsonAsync<IReadOnlyList<GameReviewResponse>>(TestContext.Current.CancellationToken);
         body.ShouldNotBeNull();
         body.Count.ShouldBe(1);
         body[0].Comentario.ShouldBe("Incrível!");
@@ -127,15 +127,15 @@ public class GameReviewEndpointsTests(IntegrationTestFixture fixture)
             3,
             "Razoável");
 
-        var createResponse = await customerClient.PostAsJsonAsync($"/api/games/{gameId}/reviews", createCommand);
+        var createResponse = await customerClient.PostAsJsonAsync($"/api/games/{gameId}/reviews", createCommand, TestContext.Current.CancellationToken);
         createResponse.StatusCode.ShouldBe(HttpStatusCode.Created);
 
-        var createdReview = await createResponse.Content.ReadFromJsonAsync<GameReviewResponse>();
+        var createdReview = await createResponse.Content.ReadFromJsonAsync<GameReviewResponse>(TestContext.Current.CancellationToken);
 
         var updateCommand = new UpdateGameReviewCommand(5, "Atualizado: Excelente!");
 
         // Act
-        var response = await customerClient.PutAsJsonAsync($"/api/games/reviews/{createdReview!.Id}", updateCommand);
+        var response = await customerClient.PutAsJsonAsync($"/api/games/reviews/{createdReview!.Id}", updateCommand, TestContext.Current.CancellationToken);
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
@@ -156,13 +156,13 @@ public class GameReviewEndpointsTests(IntegrationTestFixture fixture)
             1,
             "Não gostei.");
 
-        var createResponse = await customerClient.PostAsJsonAsync($"/api/games/{gameId}/reviews", createCommand);
+        var createResponse = await customerClient.PostAsJsonAsync($"/api/games/{gameId}/reviews", createCommand, TestContext.Current.CancellationToken);
         createResponse.StatusCode.ShouldBe(HttpStatusCode.Created);
 
-        var createdReview = await createResponse.Content.ReadFromJsonAsync<GameReviewResponse>();
+        var createdReview = await createResponse.Content.ReadFromJsonAsync<GameReviewResponse>(TestContext.Current.CancellationToken);
 
         // Act
-        var response = await customerClient.DeleteAsync($"/api/games/reviews/{createdReview!.Id}");
+        var response = await customerClient.DeleteAsync($"/api/games/reviews/{createdReview!.Id}", TestContext.Current.CancellationToken);
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);

@@ -10,6 +10,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
+builder.AddMongoDBClient("fcg-catalog-db");
+
 builder.Host.UseSerilog((context, services, configuration) =>
 {
     configuration
