@@ -1,5 +1,6 @@
 ﻿using FcgCatalog.Application.Commands.Games;
 using FcgCatalog.Application.Handlers.Games;
+using FcgCatalog.Application.Interfaces;
 using FcgCatalog.Domain.Entities;
 using FcgCatalog.Domain.Enums;
 using FcgCatalog.Domain.Repositories.Games;
@@ -16,13 +17,16 @@ public class UpdatePriceHandlerTests
     {
         // Arrange
         var repo = Substitute.For<IGameRepository>();
+        var cache = Substitute.For<IGameCacheService>();
 
         repo.GetByIdAsync(
             Arg.Any<Guid>(),
             Arg.Any<CancellationToken>())
             .Returns((Game?)null);
 
-        var handler = new UpdatePriceHandler(repo);
+        var handler = new UpdatePriceHandler(
+            repo,
+            cache);
 
         var command = new UpdatePriceCommand(50m)
         {
@@ -30,10 +34,16 @@ public class UpdatePriceHandlerTests
         };
 
         // Act
-        var action = () => handler.Handle(command, CancellationToken.None);
+        var action = () => handler.Handle(
+            command,
+            CancellationToken.None);
 
         // Assert
         await Should.ThrowAsync<NotFoundException>(action);
+
+        // Como o jogo não existe, o cache não deve ser invalidado.
+        await cache.DidNotReceive()
+            .InvalidateGameAsync(Arg.Any<Guid>());
     }
 
     [Fact]
@@ -41,6 +51,7 @@ public class UpdatePriceHandlerTests
     {
         // Arrange
         var repo = Substitute.For<IGameRepository>();
+        var cache = Substitute.For<IGameCacheService>();
 
         var game = new Game(
             "Halo",
@@ -49,10 +60,14 @@ public class UpdatePriceHandlerTests
             DateTime.Today,
             ClassificacaoEtaria.Livre);
 
-        repo.GetByIdAsync(game.Id, Arg.Any<CancellationToken>())
+        repo.GetByIdAsync(
+            game.Id,
+            Arg.Any<CancellationToken>())
             .Returns(game);
 
-        var handler = new UpdatePriceHandler(repo);
+        var handler = new UpdatePriceHandler(
+            repo,
+            cache);
 
         var command = new UpdatePriceCommand(80m)
         {
@@ -60,7 +75,9 @@ public class UpdatePriceHandlerTests
         };
 
         // Act
-        var result = await handler.Handle(command, CancellationToken.None);
+        var result = await handler.Handle(
+            command,
+            CancellationToken.None);
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
@@ -68,5 +85,9 @@ public class UpdatePriceHandlerTests
 
         await repo.Received(1)
             .SaveChangesAsync(Arg.Any<CancellationToken>());
+
+        // A alteração do preço deve invalidar o cache do jogo e da lista.
+        await cache.Received(1)
+            .InvalidateGameAsync(game.Id);
     }
 }

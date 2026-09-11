@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.Hosting;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
@@ -21,12 +21,16 @@ var rabbitmq = isTesting
         .WithManagementPlugin()
         .WithLifetime(ContainerLifetime.Persistent);
 
+var redis = builder.AddRedis("redis");
+
 builder.AddProject<Projects.FcgCatalog_Api>("fcgcatalog-api")
         .WithEnvironment("ASPNETCORE_ENVIRONMENT", builder.Environment.EnvironmentName)
         .WithReference(postgres)
         .WithReference(rabbitmq)
+        .WithReference(redis)
         .WaitFor(postgres)
-        .WaitFor(rabbitmq);
+        .WaitFor(rabbitmq)
+        .WaitFor(redis); ;
 
 builder.AddProject<Projects.FcgCatalog_Worker>("fcgcatalog-worker")
         .WithEnvironment("ASPNETCORE_ENVIRONMENT", builder.Environment.EnvironmentName)

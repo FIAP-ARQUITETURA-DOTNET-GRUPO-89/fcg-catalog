@@ -1,4 +1,5 @@
-using MediatR;
+﻿using MediatR;
+using FcgCatalog.Application.Interfaces;
 using FcgCatalog.Application.Mappers.Games;
 using FcgCatalog.Application.Queries.Games;
 using FcgCatalog.Application.Responses.Games;
@@ -8,16 +9,43 @@ using OperationResult;
 
 namespace FcgCatalog.Application.Handlers.Games;
 
-public sealed class GetGamesHandler(IGameRepository repository)
-: IRequestHandler<GetGamesQuery, Result<PagedResponse<GameResponse>>>
+public sealed class GetGamesHandler(
+    IGameRepository repository,
+    IGameCacheService cache)
+    : IRequestHandler<GetGamesQuery, Result<PagedResponse<GameResponse>>>
 {
-    public async Task<Result<PagedResponse<GameResponse>>> Handle(GetGamesQuery request, CancellationToken cancellationToken)
+    public async Task<Result<PagedResponse<GameResponse>>> Handle(
+        GetGamesQuery request,
+        CancellationToken cancellationToken)
     {
-        var totalCount = await repository.CountActiveAsync(cancellationToken);
-        var games = await repository.GetPagedAsNoTrackingAsync(request.Page, request.PageSize, cancellationToken);
+        var cached = await cache.GetGamesAsync(
+            request.Page,
+            request.PageSize);
+
+        if (cached is not null)
+            return Result.Success(cached);
+
+        var totalCount = await repository.CountActiveAsync(
+            cancellationToken);
+
+        var games = await repository.GetPagedAsNoTrackingAsync(
+            request.Page,
+            request.PageSize,
+            cancellationToken);
 
         var items = games.Select(g => g.ToResponse());
 
-        return Result.Success(new PagedResponse<GameResponse>(items, totalCount, request.Page, request.PageSize));
+        var response = new PagedResponse<GameResponse>(
+            items,
+            totalCount,
+            request.Page,
+            request.PageSize);
+
+        await cache.SetGamesAsync(
+            request.Page,
+            request.PageSize,
+            response);
+
+        return Result.Success(response);
     }
 }
