@@ -24,7 +24,7 @@ public class GameReviewTests
         review.JogoId.ShouldBe(jogoId);
         review.UsuarioId.ShouldBe(usuarioId);
         review.Nota.ShouldBe(4);
-        review.Comentario.ShouldBe("Muito bom"); // Testa o Trim()
+        review.Comentario.ShouldBe("Muito bom");
         review.CreatedAt.ShouldNotBe(default);
         review.UpdatedAt.ShouldBeNull();
     }
@@ -72,8 +72,7 @@ public class GameReviewTests
     public void Dado_ComentarioVazio_Quando_CriarGameReview_Entao_LancaBusinessException(string comentarioInvalido)
     {
         // Arrange & Act
-        // Usamos pragma warning disable para permitir passar null explicitamente no teste
-#pragma warning disable CS8604 // Possível argumento de referência nula.
+#pragma warning disable CS8604
         var action = () => new GameReview(Guid.NewGuid(), Guid.NewGuid(), 5, comentarioInvalido);
 #pragma warning restore CS8604
 

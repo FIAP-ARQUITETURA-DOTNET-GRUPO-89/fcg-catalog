@@ -5,7 +5,7 @@ using FcgCatalog.IntegrationTests.TestHelpers;
 using FcgCatalog.SharedKernel.Settings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using MongoDB.Driver; // Adicione este using
+using MongoDB.Driver;
 
 namespace FcgCatalog.IntegrationTests.Fixtures;
 
@@ -19,7 +19,7 @@ public class IntegrationTestFixture : IAsyncLifetime
 
     private TestDatabaseManager _dbManager = default!;
     private string _connectionString = string.Empty;
-    private string _mongoConnectionString = string.Empty; // Armazena a connection string do mongo
+    private string _mongoConnectionString = string.Empty;
 
     /// <summary>
     /// Inicializa o ambiente de testes.
@@ -51,7 +51,6 @@ public class IntegrationTestFixture : IAsyncLifetime
 
         _connectionString = await App.GetConnectionStringAsync("Default") ?? throw new InvalidOperationException("Connection string do Postgres não encontrada");
 
-        // Pega a connection string do MongoDB configurada no Aspire AppHost (ajuste o nome se necessário, ex: "mongodb" ou "MongoDb")
         _mongoConnectionString = await App.GetConnectionStringAsync("mongodb")
                                  ?? await App.GetConnectionStringAsync("MongoDb")
                                  ?? "mongodb://localhost:27017";
@@ -80,7 +79,6 @@ public class IntegrationTestFixture : IAsyncLifetime
     {
         await _dbManager.ResetAsync();
 
-        // Limpa a collection de reviews no MongoDB para evitar poluição entre testes
         if (!string.IsNullOrEmpty(_mongoConnectionString))
         {
             var mongoUrl = MongoUrl.Create(_mongoConnectionString);
