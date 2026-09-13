@@ -44,5 +44,7 @@ public static class AppConfigureExtensions
 
         app.MapHealthChecks("/health");
         app.MapHealthChecks("/ready");
+
+        app.MapPrometheusScrapingEndpoint();
     }
 }
