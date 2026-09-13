@@ -40,7 +40,7 @@ public static class AppServiceCollectionExtensions
 
         services.AddSingleton<IMongoClient>(sp =>
         {
-            var connectionString = configuration.GetConnectionString("fcg-catalog-db") ?? "mongodb://localhost:27017";
+            var connectionString = configuration.GetConnectionString("Mongo") ?? "mongodb://localhost:27017";
             return new MongoClient(connectionString);
         });
 

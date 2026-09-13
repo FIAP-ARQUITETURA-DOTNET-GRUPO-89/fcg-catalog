@@ -24,10 +24,10 @@ var rabbitmq = isTesting
 var mongodb = isTesting
     ? builder.AddMongoDB("mongodb")
         .WithLifetime(ContainerLifetime.Session)
-        .AddDatabase("fcg-catalog-db")
+        .AddDatabase("Mongo")
     : builder.AddMongoDB("mongodb", port: 27017)
         .WithLifetime(ContainerLifetime.Persistent)
-        .AddDatabase("fcg-catalog-db");
+        .AddDatabase("Mongo");
 
 builder.AddProject<Projects.FcgCatalog_Api>("fcgcatalog-api")
         .WithEnvironment("ASPNETCORE_ENVIRONMENT", builder.Environment.EnvironmentName)
