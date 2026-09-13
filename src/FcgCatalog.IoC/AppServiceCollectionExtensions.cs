@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using MediatR;
 using FcgCatalog.Application;
 using FcgCatalog.Domain;
@@ -15,6 +15,7 @@ using FcgCatalog.SharedKernel.Settings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using MongoDB.Driver;
 
 namespace FcgCatalog.IoC;
 
@@ -37,10 +38,23 @@ public static class AppServiceCollectionExtensions
             options.UseNpgsql(configuration.GetConnectionString("Default"),
                 npgsql => npgsql.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10), errorCodesToAdd: null)));
 
+        services.AddSingleton<IMongoClient>(sp =>
+        {
+            var connectionString = configuration.GetConnectionString("fcg-catalog-db") ?? "mongodb://localhost:27017";
+            return new MongoClient(connectionString);
+        });
+
+        services.AddScoped<IMongoDatabase>(sp =>
+        {
+            var client = sp.GetRequiredService<IMongoClient>();
+            return client.GetDatabase("fcgcatalog-db");
+        });
+
         services.AddMassTransitRabbitMqPublisher(configuration);
 
         services.AddScoped<IGameRepository, GameRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IUserGameRepository, UserGameRepository>();
+        services.AddScoped<IGameReviewRepository, GameReviewRepository>();
     }
 }

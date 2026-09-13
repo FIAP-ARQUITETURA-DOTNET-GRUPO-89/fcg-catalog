@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.Hosting;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
@@ -21,18 +21,30 @@ var rabbitmq = isTesting
         .WithManagementPlugin()
         .WithLifetime(ContainerLifetime.Persistent);
 
+var mongodb = isTesting
+    ? builder.AddMongoDB("mongodb")
+        .WithLifetime(ContainerLifetime.Session)
+        .AddDatabase("fcg-catalog-db")
+    : builder.AddMongoDB("mongodb", port: 27017)
+        .WithLifetime(ContainerLifetime.Persistent)
+        .AddDatabase("fcg-catalog-db");
+
 builder.AddProject<Projects.FcgCatalog_Api>("fcgcatalog-api")
         .WithEnvironment("ASPNETCORE_ENVIRONMENT", builder.Environment.EnvironmentName)
         .WithReference(postgres)
         .WithReference(rabbitmq)
+        .WithReference(mongodb)
         .WaitFor(postgres)
-        .WaitFor(rabbitmq);
+        .WaitFor(rabbitmq)
+        .WaitFor(mongodb);
 
 builder.AddProject<Projects.FcgCatalog_Worker>("fcgcatalog-worker")
         .WithEnvironment("ASPNETCORE_ENVIRONMENT", builder.Environment.EnvironmentName)
         .WithReference(postgres)
         .WithReference(rabbitmq)
+        .WithReference(mongodb)
         .WaitFor(postgres)
-        .WaitFor(rabbitmq);
+        .WaitFor(rabbitmq)
+        .WaitFor(mongodb);
 
 builder.Build().Run();
