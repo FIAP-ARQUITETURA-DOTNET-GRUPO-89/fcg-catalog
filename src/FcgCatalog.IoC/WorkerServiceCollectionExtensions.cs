@@ -31,7 +31,8 @@ public static class WorkerServiceCollectionExtensions
 
         services.AddSingleton<IMongoClient>(sp =>
         {
-            var connectionString = configuration.GetConnectionString("fcg-catalog-db") ?? "mongodb://localhost:27017";
+            var connectionString = configuration.GetConnectionString("fcg-catalog-db")
+                ?? throw new InvalidOperationException("A connection string 'fcg-catalog-db' não foi encontrada nas configurações.");
             return new MongoClient(connectionString);
         });
 
