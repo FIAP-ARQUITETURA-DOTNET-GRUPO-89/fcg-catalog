@@ -23,7 +23,9 @@ public sealed class GetGamesHandler(
             request.PageSize);
 
         if (cached is not null)
+        {
             return Result.Success(cached);
+        }
 
         var totalCount = await repository.CountActiveAsync(
             cancellationToken);

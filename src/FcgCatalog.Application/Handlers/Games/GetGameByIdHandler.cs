@@ -22,7 +22,9 @@ public sealed class GetGameByIdHandler(
             request.Id);
 
         if (cached is not null)
+        {
             return Result.Success(cached);
+        }
 
         var game = await repository.GetByIdAsNoTrackingAsync(
             request.Id,

@@ -2,6 +2,7 @@
 using FcgCatalog.Application.Interfaces;
 using FcgCatalog.Application.Responses.Games;
 using FcgCatalog.SharedKernel.Responses;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 
@@ -9,14 +10,20 @@ namespace FcgCatalog.Infrastructure.Caching;
 
 public sealed class RedisGameCacheService(
     IConnectionMultiplexer redis,
-    ILogger<RedisGameCacheService> logger)
+    ILogger<RedisGameCacheService> logger,
+    IConfiguration configuration)
     : IGameCacheService
 {
     private const string VersionKey = "fcg:catalog:games:version";
     private const string GameKeyPrefix = "fcg:catalog:game";
 
-    private static readonly TimeSpan CacheDuration =
-        TimeSpan.FromMinutes(5);
+    private readonly TimeSpan _cacheDuration =
+     TimeSpan.FromMinutes(
+         int.TryParse(
+             configuration["CacheSettings:DurationMinutes"],
+             out var durationMinutes)
+             ? durationMinutes
+             : 5);
 
     private static readonly JsonSerializerOptions JsonOptions =
         new(JsonSerializerDefaults.Web);
@@ -39,7 +46,9 @@ public sealed class RedisGameCacheService(
             var cached = await _database.StringGetAsync(key);
 
             if (!cached.HasValue)
+            {
                 return null;
+            }
 
             return JsonSerializer.Deserialize<PagedResponse<GameResponse>>(
                 cached.ToString(),
@@ -76,7 +85,7 @@ public sealed class RedisGameCacheService(
             await _database.StringSetAsync(
                 key,
                 json,
-                CacheDuration);
+                _cacheDuration);
         }
         catch (RedisException ex)
         {
@@ -94,7 +103,9 @@ public sealed class RedisGameCacheService(
                 BuildGameKey(id));
 
             if (!cached.HasValue)
+            {
                 return null;
+            }
 
             return JsonSerializer.Deserialize<GameResponse>(
                 cached.ToString(),
@@ -124,7 +135,7 @@ public sealed class RedisGameCacheService(
             await _database.StringSetAsync(
                 BuildGameKey(id),
                 json,
-                CacheDuration);
+                _cacheDuration);
         }
         catch (RedisException ex)
         {
