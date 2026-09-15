@@ -41,6 +41,7 @@ public static class AppConfigureExtensions
 
         app.MapGamesEndpoints();
         app.MapUserLibraryEndpoints();
+        app.MapGameReviewEndpoints();
 
         app.MapHealthChecks("/health");
         app.MapHealthChecks("/ready");

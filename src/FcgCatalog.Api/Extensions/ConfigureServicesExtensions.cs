@@ -1,4 +1,6 @@
-using FcgCatalog.Infrastructure.Database;
+﻿using FcgCatalog.Infrastructure.Database;
+using FcgCatalog.Infrastructure.Repositories.Games;
+using FcgCatalog.Domain.Repositories.Games;
 using FcgCatalog.IoC;
 using Microsoft.OpenApi;
 
@@ -31,6 +33,10 @@ public static class ConfigureServicesExtensions
 
         services.ConfigureAppDependencies(configuration);
 
-        services.AddHealthChecks().AddDbContextCheck<FcgCatalogDbContext>();
+        services.AddScoped<IGameReviewRepository, GameReviewRepository>();
+
+        services.AddHealthChecks()
+            .AddDbContextCheck<FcgCatalogDbContext>()
+            .AddMongoDb();
     }
 }

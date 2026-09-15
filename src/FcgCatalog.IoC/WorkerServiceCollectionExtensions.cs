@@ -1,4 +1,4 @@
-using FcgCatalog.Application;
+﻿using FcgCatalog.Application;
 using FcgCatalog.Domain;
 using FcgCatalog.Domain.Repositories.Games;
 using FcgCatalog.Domain.Repositories.Library;
@@ -11,6 +11,7 @@ using FcgCatalog.SharedKernel.Settings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using MongoDB.Driver;
 
 namespace FcgCatalog.IoC;
 
@@ -30,8 +31,22 @@ public static class WorkerServiceCollectionExtensions
             options.UseNpgsql(configuration.GetConnectionString("Default"),
                 npgsql => npgsql.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10), errorCodesToAdd: null)));
 
+        services.AddSingleton<IMongoClient>(sp =>
+        {
+            var connectionString = configuration.GetConnectionString("Mongo")
+                ?? throw new InvalidOperationException("A connection string 'Mongo' não foi encontrada nas configurações.");
+            return new MongoClient(connectionString);
+        });
+
+        services.AddScoped<IMongoDatabase>(sp =>
+        {
+            var client = sp.GetRequiredService<IMongoClient>();
+            return client.GetDatabase("fcgcatalog-db");
+        });
+
         services.AddScoped<IGameRepository, GameRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IUserGameRepository, UserGameRepository>();
+        services.AddScoped<IGameReviewRepository, GameReviewRepository>();
     }
 }

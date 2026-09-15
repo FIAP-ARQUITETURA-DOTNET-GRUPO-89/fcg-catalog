@@ -1,10 +1,16 @@
 ﻿using FcgCatalog.Api.Extensions;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.Serializers;
 using Serilog;
+
+BsonSerializer.RegisterSerializer(new GuidSerializer(GuidRepresentation.Standard));
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
+builder.AddMongoDBClient("Mongo");
 builder.AddRedisClient("redis");
 
 builder.Host.UseSerilog((context, services, configuration) =>

@@ -1,10 +1,11 @@
-using Aspire.Hosting;
+﻿using Aspire.Hosting;
 using Aspire.Hosting.Testing;
 using FcgCatalog.Infrastructure.Database;
 using FcgCatalog.IntegrationTests.TestHelpers;
 using FcgCatalog.SharedKernel.Settings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using MongoDB.Driver;
 
 namespace FcgCatalog.IntegrationTests.Fixtures;
 
@@ -18,6 +19,7 @@ public class IntegrationTestFixture : IAsyncLifetime
 
     private TestDatabaseManager _dbManager = default!;
     private string _connectionString = string.Empty;
+    private string _mongoConnectionString = string.Empty;
 
     /// <summary>
     /// Inicializa o ambiente de testes.
@@ -47,7 +49,12 @@ public class IntegrationTestFixture : IAsyncLifetime
         App = await builder.BuildAsync();
         await App.StartAsync();
 
-        _connectionString = await App.GetConnectionStringAsync("Default") ?? throw new InvalidOperationException("Connection string não encontrada");
+        _connectionString = await App.GetConnectionStringAsync("Default") ?? throw new InvalidOperationException("Connection string do Postgres não encontrada");
+
+        _mongoConnectionString = await App.GetConnectionStringAsync("mongodb")
+                                 ?? await App.GetConnectionStringAsync("MongoDb")
+                                 ?? "mongodb://localhost:27017";
+
         _dbManager = new TestDatabaseManager(_connectionString);
         await _dbManager.InitializeAsync();
         await _dbManager.ResetAsync();
@@ -66,10 +73,21 @@ public class IntegrationTestFixture : IAsyncLifetime
     }
 
     /// <summary>
-    /// Reseta o banco de dados para um estado limpo.
+    /// Reseta o banco de dados relacional e o NoSQL para um estado limpo.
     /// </summary>
     public async Task ResetDatabaseAsync()
-        => await _dbManager.ResetAsync();
+    {
+        await _dbManager.ResetAsync();
+
+        if (!string.IsNullOrEmpty(_mongoConnectionString))
+        {
+            var mongoUrl = MongoUrl.Create(_mongoConnectionString);
+            var mongoClient = new MongoClient(mongoUrl);
+            var database = mongoClient.GetDatabase(mongoUrl.DatabaseName ?? "fcg_catalog_db");
+
+            await database.DropCollectionAsync("game_reviews");
+        }
+    }
 
     /// <summary>
     /// Cria um HttpClient configurado para comunicação com a API.
