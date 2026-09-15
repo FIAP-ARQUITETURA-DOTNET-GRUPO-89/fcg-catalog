@@ -1,4 +1,5 @@
-﻿using FcgCatalog.Domain;
+﻿using FcgCatalog.Application;
+using FcgCatalog.Domain;
 using FcgCatalog.Domain.Repositories.Games;
 using FcgCatalog.Domain.Repositories.Library;
 using FcgCatalog.Domain.Repositories.Orders;
@@ -23,7 +24,8 @@ public static class WorkerServiceCollectionExtensions
                 .ValidateOnStart();
 
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(
-            typeof(IDomainAssembly).Assembly));
+            typeof(IDomainAssembly).Assembly,
+            typeof(IApplicationAssembly).Assembly));
 
         services.AddDbContext<FcgCatalogDbContext>(options =>
             options.UseNpgsql(configuration.GetConnectionString("Default"),
