@@ -1,18 +1,19 @@
-﻿# 🚀 FcgCatalog — CatalogAPI
+# 🚀 FcgCatalog — CatalogAPI
 
-Microsserviço de **Catálogo de Jogos** da plataforma **FIAP Cloud Games (FCG)**. Faz parte da decomposição em microsserviços orientados a eventos (Tech Challenge FIAP), sendo responsável pelo gerenciamento do catálogo de jogos, criação de pedidos de compra e manutenção da biblioteca dos usuários após a confirmação do pagamento.
+Microsserviço de **Catálogo de Jogos** da plataforma **FIAP Cloud Games (FCG)**. Faz parte da decomposição em microsserviços orientados a eventos (Tech Challenge FIAP), sendo responsável pelo gerenciamento do catálogo de jogos, criação de pedidos de compra, manutenção da biblioteca dos usuários após a confirmação do pagamento e gerenciamento de avaliações (reviews) de jogos utilizando MongoDB.
 
 ---
 
 ## 🎯 Responsabilidades
 
-- CRUD de jogos do catálogo.
-- Criar pedidos de compra.
-- Publicar o evento `OrderPlacedEvent`.
-- Consumir `PaymentProcessedEvent` (via Worker).
-- Adicionar jogos à biblioteca do usuário após pagamentos aprovados.
-- Garantir idempotência por `OrderId` e unicidade `(UserId, GameId)`.
-- Utilizar cache distribuído Redis para consultas do catálogo.
+* CRUD de jogos do catálogo.
+* Criar pedidos de compra.
+* Publicar o evento `OrderPlacedEvent`.
+* Consumir `PaymentProcessedEvent` (via Worker).
+* Adicionar jogos à biblioteca do usuário após pagamentos aprovados.
+* Garantir idempotência por `OrderId` e unicidade `(UserId, GameId)`.
+* Utilizar cache distribuído Redis para consultas do catálogo.
+* Gerenciamento e persistência de avaliações (Reviews) de jogos utilizando MongoDB.
 
 ---
 
@@ -41,26 +42,35 @@ Microsserviço de **Catálogo de Jogos** da plataforma **FIAP Cloud Games (FCG)*
 
 ### Jogos (`/api/games`)
 
-| Verbo | Rota | Autorização | Descrição |
-|-------|------|-------------|-----------|
-| POST | `/api/games` | Admin | Cria um jogo |
-| GET | `/api/games` | Customer | Lista jogos paginados |
-| GET | `/api/games/{id}` | Customer | Obtém um jogo |
-| PUT | `/api/games/{id}` | Admin | Atualiza um jogo |
-| PATCH | `/api/games/{id}/price` | Admin | Atualiza o preço |
-| DELETE | `/api/games/{id}` | Admin | Inativa um jogo |
+| Verbo  | Rota                    | Autorização | Descrição             |
+| ------ | ----------------------- | ----------- | --------------------- |
+| POST   | `/api/games`            | Admin       | Cria um jogo          |
+| GET    | `/api/games`            | Customer    | Lista jogos paginados |
+| GET    | `/api/games/{id}`       | Customer    | Obtém um jogo         |
+| PUT    | `/api/games/{id}`       | Admin       | Atualiza um jogo      |
+| PATCH  | `/api/games/{id}/price` | Admin       | Atualiza o preço      |
+| DELETE | `/api/games/{id}`       | Admin       | Inativa um jogo       |
 
 ### Pedidos (`/api/orders`)
 
-| Verbo | Rota | Autorização | Descrição |
-|-------|------|-------------|-----------|
-| POST | `/api/orders` | Customer | Cria um pedido de compra e publica `OrderPlacedEvent` |
+| Verbo | Rota          | Autorização | Descrição                                             |
+| ----- | ------------- | ----------- | ----------------------------------------------------- |
+| POST  | `/api/orders` | Customer    | Cria um pedido de compra e publica `OrderPlacedEvent` |
 
 ### Biblioteca (`/api/library`)
 
-| Verbo | Rota | Autorização | Descrição |
-|-------|------|-------------|-----------|
-| GET | `/api/library` | Customer | Lista os jogos da biblioteca do usuário autenticado |
+| Verbo | Rota           | Autorização | Descrição                                           |
+| ----- | -------------- | ----------- | --------------------------------------------------- |
+| GET   | `/api/library` | Customer    | Lista os jogos da biblioteca do usuário autenticado |
+
+### Reviews (`/api/games`)
+
+| Verbo  | Rota                                     | Autorização | Descrição                                 |
+| ------ | ---------------------------------------- | ----------- | ----------------------------------------- |
+| GET    | `/api/games/{gameId}/reviews`            | Customer    | Lista as avaliações de um jogo específico |
+| POST   | `/api/games/{gameId}/reviews`            | Customer    | Adiciona uma nova avaliação para o jogo   |
+| PUT    | `/api/games/{gameId}/reviews/{reviewId}` | Customer    | Atualiza uma avaliação existente          |
+| DELETE | `/api/games/{gameId}/reviews/{reviewId}` | Customer    | Remove uma avaliação                      |
 
 ---
 
@@ -173,16 +183,121 @@ Falhas de leitura e escrita no Redis são tratadas e registradas em log, permiti
 
 ---
 
+## 🍃 Persistência de Reviews com MongoDB
+
+Para o gerenciamento de avaliações e comentários dos jogos, o CatalogAPI utiliza o **MongoDB** como banco de dados NoSQL orientado a documentos.
+
+As operações de Reviews são realizadas através de um repositório específico:
+
+```text
+IGameReviewRepository
+        │
+        ▼
+GameReviewRepository
+        │
+        ▼
+MongoDB
+```
+
+O repositório é registrado na aplicação como uma dependência `Scoped`:
+
+```csharp
+services.AddScoped<IGameReviewRepository, GameReviewRepository>();
+```
+
+### Justificativa da escolha
+
+O MongoDB é utilizado para a persistência das Reviews devido às características desse tipo de dado:
+
+* **Flexibilidade de esquema:** documentos permitem evolução da estrutura das avaliações sem a necessidade de alterações relacionais complexas.
+* **Desempenho em leituras e escritas isoladas:** adequado para operações de criação, consulta, atualização e remoção de avaliações.
+* **Escalabilidade horizontal:** o MongoDB permite expansão horizontal conforme o volume de documentos aumenta.
+
+### Integração com .NET Aspire
+
+A aplicação utiliza o recurso MongoDB provisionado pelo ambiente do .NET Aspire.
+
+O cliente MongoDB é registrado através do recurso:
+
+```csharp
+builder.AddMongoDBClient("Mongo");
+```
+
+Dessa forma, o nome utilizado para a integração da aplicação com o recurso MongoDB é:
+
+```text
+Mongo
+```
+
+O health check do MongoDB também está configurado na aplicação:
+
+```csharp
+services.AddHealthChecks()
+    .AddDbContextCheck<FcgCatalogDbContext>()
+    .AddMongoDb();
+```
+
+### Configuração
+
+A configuração utilizada no `appsettings.json` é:
+
+```json
+"ConnectionStrings": {
+  "Default": "",
+  "Rabbitmq": "",
+  "Mongo": "mongodb://mongodb:27017"
+}
+```
+
+A chave correspondente para configuração através de variável de ambiente é:
+
+```text
+ConnectionStrings__Mongo
+```
+
+O endereço configurado para o MongoDB no ambiente apresentado é:
+
+```text
+mongodb://mongodb:27017
+```
+
+> O nome da conexão é `Mongo`. Não é utilizado `MongoDB` como nome da chave de configuração.
+
+---
+
 ## 🔧 Variáveis de Ambiente
 
-| Variável | Descrição |
-|----------|-----------|
-| `ConnectionStrings__Default` | Banco PostgreSQL |
-| `ConnectionStrings__rabbitmq` | RabbitMQ |
-| `ConnectionStrings__redis` | Redis utilizado pelo cache distribuído |
-| `JwtSettings__Issuer` | Issuer esperado do JWT |
-| `JwtSettings__SecurityKey` | Chave utilizada na validação do JWT |
-| `JwtSettings__ExpirationHours` | Tempo de expiração do token |
+| Variável                       | Descrição                                       |
+| ------------------------------ | ----------------------------------------------- |
+| `ConnectionStrings__Default`   | Banco PostgreSQL                                |
+| `ConnectionStrings__rabbitmq`  | RabbitMQ                                        |
+| `ConnectionStrings__redis`     | Redis utilizado pelo cache distribuído          |
+| `ConnectionStrings__Mongo`     | MongoDB utilizado para persistência das Reviews |
+| `JwtSettings__Issuer`          | Issuer esperado do JWT                          |
+| `JwtSettings__SecurityKey`     | Chave utilizada na validação do JWT             |
+| `JwtSettings__ExpirationHours` | Tempo de expiração do token                     |
+
+### MongoDB no ambiente local
+
+Quando executado através do .NET Aspire, o MongoDB é utilizado através do recurso identificado como:
+
+```text
+Mongo
+```
+
+A aplicação registra o cliente através de:
+
+```csharp
+builder.AddMongoDBClient("Mongo");
+```
+
+Quando executado utilizando a configuração apresentada no `appsettings.json`, a conexão utiliza:
+
+```text
+mongodb://mongodb:27017
+```
+
+---
 
 ### Redis no ambiente local
 
@@ -236,7 +351,7 @@ Após a inicialização, acesse o Dashboard do Aspire pela URL exibida no consol
 dotnet run --project src/FcgCatalog.Api
 ```
 
-> **Observação:** ao executar apenas a API, a infraestrutura (PostgreSQL, RabbitMQ e Redis) deve estar disponível.
+> **Observação:** ao executar apenas a API, a infraestrutura (PostgreSQL, RabbitMQ, Redis e MongoDB) deve estar disponível.
 
 ---
 
@@ -254,6 +369,12 @@ A API do catálogo utiliza:
 
 ```text
 ConnectionStrings__redis=redis:6379
+```
+
+O MongoDB utilizado pelas Reviews utiliza a conexão:
+
+```text
+ConnectionStrings__Mongo=mongodb://mongodb:27017
 ```
 
 Para mais informações sobre a execução integrada da plataforma, consulte a documentação do repositório **FCG Platform**.
@@ -318,16 +439,29 @@ tests/FcgCatalog.IntegrationTests/Endpoints/GamesCacheTests.cs
 
 São validados cenários como:
 
-- Consultas consecutivas.
-- Cache de listagem.
-- Cache por ID.
-- Atualização de preço.
-- Atualização do jogo.
-- Exclusão do jogo.
-- Criação de novo jogo.
-- Invalidação do cache após operações de escrita.
+* Consultas consecutivas.
+* Cache de listagem.
+* Cache por ID.
+* Atualização de preço.
+* Atualização do jogo.
+* Exclusão do jogo.
+* Criação de novo jogo.
+* Invalidação do cache após operações de escrita.
 
 Também existem testes unitários dos handlers responsáveis pelas operações de leitura e invalidação do cache.
+
+### Testes de Reviews
+
+Os testes relacionados às Reviews validam as operações de persistência e manipulação das avaliações de jogos utilizando o MongoDB.
+
+São considerados cenários relacionados aos endpoints:
+
+```text
+GET    /api/games/{gameId}/reviews
+POST   /api/games/{gameId}/reviews
+PUT    /api/games/{gameId}/reviews/{reviewId}
+DELETE /api/games/{gameId}/reviews/{reviewId}
+```
 
 ### Testes de performance
 
@@ -341,12 +475,12 @@ A comparação realizada considera uma primeira consulta com **cache miss** e co
 
 Resultados obtidos durante a validação:
 
-| Métrica | Resultado |
-|---------|-----------|
-| Cache MISS | 453,16 ms |
-| Cache HIT — 20 requisições | 132,30 ms |
-| Cache HIT — média | 6,62 ms/requisição |
-| Redução observada | 98,54% |
+| Métrica                    | Resultado          |
+| -------------------------- | ------------------ |
+| Cache MISS                 | 453,16 ms          |
+| Cache HIT — 20 requisições | 132,30 ms          |
+| Cache HIT — média          | 6,62 ms/requisição |
+| Redução observada          | 98,54%             |
 
 ---
 
@@ -354,13 +488,13 @@ Resultados obtidos durante a validação:
 
 O CatalogAPI foi desenvolvido utilizando:
 
-- Clean Architecture
-- Domain-Driven Design (DDD)
-- CQRS
-- Event-Driven Architecture
-- MediatR
-- FluentValidation
-- Cache distribuído
+* Clean Architecture
+* Domain-Driven Design (DDD)
+* CQRS
+* Event-Driven Architecture
+* MediatR
+* FluentValidation
+* Cache distribuído
 
 A implementação do cache utiliza uma abstração própria:
 
@@ -379,21 +513,40 @@ Redis
 
 O PostgreSQL permanece como fonte principal dos dados. O Redis atua como camada temporária de cache para consultas de leitura.
 
+As Reviews utilizam uma persistência independente em MongoDB:
+
+```text
+Game Review
+    │
+    ▼
+IGameReviewRepository
+    │
+    ▼
+GameReviewRepository
+    │
+    ▼
+MongoDB
+```
+
+A aplicação registra o cliente MongoDB através do recurso `Mongo` disponibilizado pelo .NET Aspire.
+
 ---
 
 ## 📋 Tecnologias
 
-- .NET 10
-- .NET Aspire
-- ASP.NET Core Minimal API
-- Entity Framework Core
-- PostgreSQL
-- RabbitMQ
-- Redis 7
-- StackExchange.Redis
-- MassTransit
-- MediatR
-- FluentValidation
-- JWT Authentication
-- Serilog
-- xUnit
+* .NET 10
+* .NET Aspire
+* ASP.NET Core Minimal API
+* Entity Framework Core
+* PostgreSQL
+* MongoDB
+* MongoDB.Driver
+* RabbitMQ
+* Redis 7
+* StackExchange.Redis
+* MassTransit
+* MediatR
+* FluentValidation
+* JWT Authentication
+* Serilog
+* xUnit
