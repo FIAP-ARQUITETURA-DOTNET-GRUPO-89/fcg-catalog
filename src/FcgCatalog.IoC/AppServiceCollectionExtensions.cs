@@ -16,6 +16,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Driver;
+using FcgCatalog.Application.Interfaces;
+using FcgCatalog.Infrastructure.Caching;
 
 namespace FcgCatalog.IoC;
 
@@ -56,5 +58,6 @@ public static class AppServiceCollectionExtensions
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IUserGameRepository, UserGameRepository>();
         services.AddScoped<IGameReviewRepository, GameReviewRepository>();
+        services.AddScoped<IGameCacheService, RedisGameCacheService>();
     }
 }

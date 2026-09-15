@@ -27,12 +27,17 @@ public class GamesEndpointsTests(IntegrationTestFixture fixture)
             ClassificacaoEtaria.Dezesseis);
 
         // Act
-        var response = await client.PostAsJsonAsync("/api/games", command);
+        var response = await client.PostAsJsonAsync(
+            "/api/games",
+            command,
+            TestContext.Current.CancellationToken);
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.Created);
 
-        var body = await response.Content.ReadFromJsonAsync<GameResponse>();
+        var body = await response.Content.ReadFromJsonAsync<GameResponse>(
+            TestContext.Current.CancellationToken);
+
         body.ShouldNotBeNull();
         body!.Nome.ShouldBe("Halo");
     }
@@ -52,7 +57,10 @@ public class GamesEndpointsTests(IntegrationTestFixture fixture)
             ClassificacaoEtaria.Dezesseis);
 
         // Act
-        var response = await client.PostAsJsonAsync("/api/games", command);
+        var response = await client.PostAsJsonAsync(
+            "/api/games",
+            command,
+            TestContext.Current.CancellationToken);
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
@@ -72,7 +80,10 @@ public class GamesEndpointsTests(IntegrationTestFixture fixture)
             ClassificacaoEtaria.Livre);
 
         // Act
-        var response = await client.PostAsJsonAsync("/api/games", command);
+        var response = await client.PostAsJsonAsync(
+            "/api/games",
+            command,
+            TestContext.Current.CancellationToken);
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
@@ -93,12 +104,15 @@ public class GamesEndpointsTests(IntegrationTestFixture fixture)
                 "FPS",
                 199.90m,
                 new DateTime(2001, 11, 15, 0, 0, 0, DateTimeKind.Utc),
-                ClassificacaoEtaria.Dezesseis));
+                ClassificacaoEtaria.Dezesseis),
+            TestContext.Current.CancellationToken);
 
         var customer = await TestAuthHelper.CreateUserCustomerAsync(fixture);
 
         // Act
-        var response = await customer.GetAsync("/api/games");
+        var response = await customer.GetAsync(
+            "/api/games",
+            TestContext.Current.CancellationToken);
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -119,14 +133,17 @@ public class GamesEndpointsTests(IntegrationTestFixture fixture)
                 "Puzzle",
                 19.90m,
                 new DateTime(1984, 6, 6, 0, 0, 0, DateTimeKind.Utc),
-                ClassificacaoEtaria.Livre));
+                ClassificacaoEtaria.Livre),
+            TestContext.Current.CancellationToken);
 
-        var game = await created.Content.ReadFromJsonAsync<GameResponse>();
+        var game = await created.Content.ReadFromJsonAsync<GameResponse>(
+            TestContext.Current.CancellationToken);
 
         // Act
         var response = await admin.PatchAsJsonAsync(
             $"/api/games/{game!.Id}/price",
-            new UpdatePriceCommand(29.90m));
+            new UpdatePriceCommand(29.90m),
+            TestContext.Current.CancellationToken);
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
@@ -147,12 +164,16 @@ public class GamesEndpointsTests(IntegrationTestFixture fixture)
                 "Clássico",
                 9.90m,
                 new DateTime(1972, 11, 29, 0, 0, 0, DateTimeKind.Utc),
-                ClassificacaoEtaria.Livre));
+                ClassificacaoEtaria.Livre),
+            TestContext.Current.CancellationToken);
 
-        var game = await created.Content.ReadFromJsonAsync<GameResponse>();
+        var game = await created.Content.ReadFromJsonAsync<GameResponse>(
+            TestContext.Current.CancellationToken);
 
         // Act
-        var response = await admin.DeleteAsync($"/api/games/{game!.Id}");
+        var response = await admin.DeleteAsync(
+            $"/api/games/{game!.Id}",
+            TestContext.Current.CancellationToken);
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);

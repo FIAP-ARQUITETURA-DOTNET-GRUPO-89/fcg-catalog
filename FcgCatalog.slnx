@@ -20,6 +20,7 @@
   </Folder>
   <Folder Name="/6 - Tests/">
     <Project Path="tests/FcgCatalog.IntegrationTests/FcgCatalog.IntegrationTests.csproj" Id="bffc731e-159d-4759-a184-6c50dc463390" />
+    <Project Path="tests/FcgCatalog.PerformanceTests/FcgCatalog.PerformanceTests.csproj" Id="bffb8f65-7147-4ad5-a7ee-70eedb373923" />
     <Project Path="tests/FcgCatalog.UnitTests/FcgCatalog.UnitTests.csproj" Id="4eb72cd3-bf11-4558-b55c-3c92e8c75e08" />
   </Folder>
 </Solution>

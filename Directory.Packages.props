@@ -5,6 +5,9 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Aspire.Hosting.MongoDB" Version="13.4.3" />
+    <PackageVersion Include="Aspire.Hosting.Redis" Version="13.4.3" />
+    <PackageVersion Include="Aspire.StackExchange.Redis" Version="13.4.3" />
+    <PackageVersion Include="StackExchange.Redis" Version="2.13.1" />
     <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.4.3" />
     <PackageVersion Include="Aspire.Hosting.RabbitMQ" Version="13.4.6" />
     <PackageVersion Include="Aspire.Hosting.Testing" Version="13.4.3" />
@@ -62,5 +65,9 @@
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
     <PackageVersion Include="xunit.v3" Version="3.2.2" />
+    <PackageVersion Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.13" />
+    <PackageVersion Include="SQLitePCLRaw.core" Version="2.1.13" />
+    <PackageVersion Include="SQLitePCLRaw.lib.e_sqlite3" Version="2.1.13" />
+    <PackageVersion Include="SQLitePCLRaw.provider.e_sqlite3" Version="2.1.13" />
   </ItemGroup>
 </Project>

@@ -1,5 +1,6 @@
 ﻿using FcgCatalog.Application.Commands.Games;
 using FcgCatalog.Application.Handlers.Games;
+using FcgCatalog.Application.Interfaces;
 using FcgCatalog.Domain.Entities;
 using FcgCatalog.Domain.Enums;
 using FcgCatalog.Domain.Repositories.Games;
@@ -16,7 +17,12 @@ public class CreateGameHandlerTests
     {
         // Arrange
         var repo = Substitute.For<IGameRepository>();
-        var handler = new CreateGameHandler(repo, NullLogger<CreateGameHandler>.Instance);
+        var cache = Substitute.For<IGameCacheService>();
+
+        var handler = new CreateGameHandler(
+            repo,
+            NullLogger<CreateGameHandler>.Instance,
+            cache);
 
         var command = new CreateGameCommand(
             "Halo",
@@ -26,13 +32,19 @@ public class CreateGameHandlerTests
             ClassificacaoEtaria.Dezesseis);
 
         // Act
-        var result = await handler.Handle(command, CancellationToken.None);
+        var result = await handler.Handle(
+            command,
+            CancellationToken.None);
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
         result.Value.Nome.ShouldBe("Halo");
 
         repo.Received(1).Add(Arg.Any<Game>());
-        await repo.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await repo.Received(1).SaveChangesAsync(
+            Arg.Any<CancellationToken>());
+
+        // O cadastro de um jogo deve invalidar o cache da lista.
+        await cache.Received(1).InvalidateGameListAsync();
     }
 }

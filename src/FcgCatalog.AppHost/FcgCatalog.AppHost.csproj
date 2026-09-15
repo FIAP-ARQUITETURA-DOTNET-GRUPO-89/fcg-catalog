@@ -9,6 +9,7 @@
     <PackageReference Include="Aspire.Hosting.MongoDB" />
     <PackageReference Include="Aspire.Hosting.PostgreSQL" />
     <PackageReference Include="Aspire.Hosting.RabbitMQ" />
+    <PackageReference Include="Aspire.Hosting.Redis" />
     <PackageReference Include="MassTransit" />
     <PackageReference Include="MessagePack" />
   </ItemGroup>

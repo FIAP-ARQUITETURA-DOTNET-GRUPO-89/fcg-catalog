@@ -11,6 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
 
 builder.AddMongoDBClient("Mongo");
+builder.AddRedisClient("redis");
 
 builder.Host.UseSerilog((context, services, configuration) =>
 {
