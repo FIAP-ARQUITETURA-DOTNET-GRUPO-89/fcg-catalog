@@ -1,9 +1,11 @@
-using FcgCatalog.Api.Extensions;
+﻿using FcgCatalog.Api.Extensions;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
+
+builder.AddRedisClient("redis");
 
 builder.Host.UseSerilog((context, services, configuration) =>
 {

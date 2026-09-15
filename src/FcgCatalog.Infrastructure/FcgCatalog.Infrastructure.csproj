@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <UserSecretsId>427a78dd-4c90-40e1-997e-4c93bd9738fc</UserSecretsId>
@@ -18,10 +18,12 @@
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="StackExchange.Redis" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\FcgCatalog.Domain\FcgCatalog.Domain.csproj" />
+    <ProjectReference Include="..\FcgCatalog.Application\FcgCatalog.Application.csproj" />
   </ItemGroup>
 
 </Project>

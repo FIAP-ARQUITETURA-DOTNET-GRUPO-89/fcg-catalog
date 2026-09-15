@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using MediatR;
 using FcgCatalog.Application;
 using FcgCatalog.Domain;
@@ -15,6 +15,8 @@ using FcgCatalog.SharedKernel.Settings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using FcgCatalog.Application.Interfaces;
+using FcgCatalog.Infrastructure.Caching;
 
 namespace FcgCatalog.IoC;
 
@@ -42,5 +44,6 @@ public static class AppServiceCollectionExtensions
         services.AddScoped<IGameRepository, GameRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IUserGameRepository, UserGameRepository>();
+        services.AddScoped<IGameCacheService, RedisGameCacheService>();
     }
 }
