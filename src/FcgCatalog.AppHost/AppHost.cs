@@ -31,17 +31,15 @@ var mongodb = isTesting
 var redis = builder.AddRedis("redis");
 
 builder.AddProject<Projects.FcgCatalog_Api>("fcgcatalog-api")
-        .WithEnvironment("ASPNETCORE_ENVIRONMENT", builder.Environment.EnvironmentName)
-        .WithReference(postgres)
-        .WithReference(rabbitmq)
-        .WithReference(mongodb)
-        .WaitFor(postgres)
-        .WaitFor(rabbitmq)
-        .WaitFor(mongodb);
-        .WithReference(redis)
-        .WaitFor(postgres)
-        .WaitFor(rabbitmq)
-        .WaitFor(redis); ;
+    .WithEnvironment("ASPNETCORE_ENVIRONMENT", builder.Environment.EnvironmentName)
+    .WithReference(postgres)
+    .WithReference(rabbitmq)
+    .WithReference(mongodb)
+    .WithReference(redis)
+    .WaitFor(postgres)
+    .WaitFor(rabbitmq)
+    .WaitFor(mongodb)
+    .WaitFor(redis);
 
 builder.AddProject<Projects.FcgCatalog_Worker>("fcgcatalog-worker")
         .WithEnvironment("ASPNETCORE_ENVIRONMENT", builder.Environment.EnvironmentName)
