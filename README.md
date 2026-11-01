@@ -13,6 +13,7 @@ Microsserviço de **Catálogo de Jogos** da plataforma **FIAP Cloud Games (FCG)*
 * Adicionar jogos à biblioteca do usuário após pagamentos aprovados.
 * Garantir idempotência por `OrderId` e unicidade `(UserId, GameId)`.
 * Utilizar cache distribuído Redis para consultas do catálogo.
+* Busca avançada de jogos com OpenSearch/Elasticsearch (fuzzy e relevância).
 * Gerenciamento e persistência de avaliações (Reviews) de jogos utilizando MongoDB.
 
 ---
@@ -50,6 +51,8 @@ Microsserviço de **Catálogo de Jogos** da plataforma **FIAP Cloud Games (FCG)*
 | PUT    | `/api/games/{id}`       | Admin       | Atualiza um jogo      |
 | PATCH  | `/api/games/{id}/price` | Admin       | Atualiza o preço      |
 | DELETE | `/api/games/{id}`       | Admin       | Inativa um jogo       |
+| GET    | `/api/games/search?q=`  | Customer    | Busca avançada (fuzzy, relevância) |
+| POST   | `/api/games/search/reindex` | Admin   | Reindexa o catálogo no motor de busca |
 
 ### Pedidos (`/api/orders`)
 
@@ -183,6 +186,56 @@ Falhas de leitura e escrita no Redis são tratadas e registradas em log, permiti
 
 ---
 
+## 🔎 Busca Avançada com OpenSearch
+
+A busca de jogos é feita por um motor de busca **independente do PostgreSQL**: o **OpenSearch**, fork open source do Elasticsearch com API compatível. Em produção, o alvo é o **Amazon OpenSearch Service**. Localmente, sobe um container pelo Aspire ou pelo Docker Compose.
+
+### Endpoint
+
+```http
+GET /api/games/search?q=zeldda&page=1&pageSize=10
+```
+
+* **Fuzzy Search**: `multi_match` com `fuzziness: AUTO` tolera até 2 erros de digitação por termo (`zeldda` → *Zelda*, `minecrat` → *Minecraft*).
+* **Relevância**: resultados ordenados por `_score` (BM25). O campo `nome` tem peso 3 sobre `descricao`, e nomes que começam com o termo recebem um bônus (`match_phrase_prefix`).
+* **Análise em português**: minúsculas, remoção de acentos (`asciifolding`) e stemming leve (`light_portuguese`).
+* A resposta inclui o `score` de cada jogo.
+
+### Sincronização
+
+A indexação é feita no **CatalogAPI**, logo após o `SaveChangesAsync`:
+
+| Operação | Ação no índice |
+| -------- | -------------- |
+| `POST /api/games` | indexa o jogo |
+| `PUT /api/games/{id}` | reindexa o jogo |
+| `PATCH /api/games/{id}/price` | reindexa o jogo |
+| `DELETE /api/games/{id}` | remove o jogo inativado |
+
+* Falhas no OpenSearch **não** interrompem o CRUD: o erro é registrado em log, como na estratégia do Redis.
+* Leituras e escritas usam o **alias** `fcg-games`, que aponta para um índice físico versionado (`fcg-games-{timestamp}`).
+* A reindexação constrói um índice novo, lendo os jogos por cursor, e **troca o alias atomicamente**. Durante a reconstrução, a busca continua respondendo pelo índice anterior. As alterações feitas no meio do processo são reaplicadas no final.
+* Cada documento carrega a versão do jogo (`UpdatedAt`), então uma escrita com dados antigos nunca sobrescreve uma mais nova.
+* As escritas usam `require_alias`: sem o alias, a escrita falha em vez de criar um índice com mapeamento dinâmico.
+* Na inicialização, o `SearchIndexInitializer` reconstrói o índice se ele não existir ou se a quantidade de documentos divergir da de jogos ativos. Ele tenta novamente com backoff até conseguir.
+* `POST /api/games/search/reindex` (Admin) reconstrói o índice a partir dos jogos ativos, para recuperar divergências.
+* O health check `opensearch` reporta **Degraded** quando o motor de busca está indisponível, sem derrubar o pod.
+* Com o motor de busca indisponível, `GET /api/games/search` responde **503 Service Unavailable**; os demais endpoints seguem funcionando.
+
+### Código
+
+```text
+Application/Interfaces/IGameSearchService.cs
+Application/Handlers/Games/SearchGamesHandler.cs
+Application/Handlers/Games/ReindexGamesHandler.cs
+Infrastructure/Search/OpenSearchGameSearchService.cs
+Infrastructure/Search/GameSearchDocument.cs
+Api/HostedServices/SearchIndexInitializer.cs
+Api/HealthChecks/OpenSearchHealthCheck.cs
+```
+
+---
+
 ## 🍃 Persistência de Reviews com MongoDB
 
 Para o gerenciamento de avaliações e comentários dos jogos, o CatalogAPI utiliza o **MongoDB** como banco de dados NoSQL orientado a documentos.
@@ -273,6 +326,11 @@ mongodb://mongodb:27017
 | `ConnectionStrings__rabbitmq`  | RabbitMQ                                        |
 | `ConnectionStrings__redis`     | Redis utilizado pelo cache distribuído          |
 | `ConnectionStrings__Mongo`     | MongoDB utilizado para persistência das Reviews |
+| `OpenSearch__Url`              | Endpoint do OpenSearch/Elasticsearch            |
+| `OpenSearch__Username`         | Usuário do OpenSearch (opcional)                |
+| `OpenSearch__Password`         | Senha do OpenSearch (opcional)                  |
+| `OpenSearch__IndexName`        | Nome do índice de jogos (padrão `fcg-games`)    |
+| `OpenSearch__NumberOfReplicas` | Réplicas do índice (`0` em nó único)            |
 | `JwtSettings__Issuer`          | Issuer esperado do JWT                          |
 | `JwtSettings__SecurityKey`     | Chave utilizada na validação do JWT             |
 | `JwtSettings__ExpirationHours` | Tempo de expiração do token                     |
@@ -450,6 +508,19 @@ São validados cenários como:
 
 Também existem testes unitários dos handlers responsáveis pelas operações de leitura e invalidação do cache.
 
+### Testes de busca
+
+```text
+tests/FcgCatalog.IntegrationTests/Endpoints/GamesSearchTests.cs
+```
+
+Executados contra um OpenSearch real (container do Aspire), validando:
+
+* Busca com erro de digitação (fuzzy).
+* Ordenação por relevância.
+* Remoção do jogo inativado do índice.
+* Validação do termo obrigatório e do limite de paginação (10.000 resultados).
+
 ### Testes de Reviews
 
 Os testes relacionados às Reviews validam as operações de persistência e manipulação das avaliações de jogos utilizando o MongoDB.
@@ -544,6 +615,7 @@ A aplicação registra o cliente MongoDB através do recurso `Mongo` disponibili
 * RabbitMQ
 * Redis 7
 * StackExchange.Redis
+* OpenSearch 2.19 / OpenSearch.Client
 * MassTransit
 * MediatR
 * FluentValidation

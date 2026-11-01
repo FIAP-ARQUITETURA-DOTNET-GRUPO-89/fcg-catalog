@@ -18,11 +18,13 @@ public class CreateGameHandlerTests
         // Arrange
         var repo = Substitute.For<IGameRepository>();
         var cache = Substitute.For<IGameCacheService>();
+        var search = Substitute.For<IGameSearchService>();
 
         var handler = new CreateGameHandler(
             repo,
             NullLogger<CreateGameHandler>.Instance,
-            cache);
+            cache,
+            search);
 
         var command = new CreateGameCommand(
             "Halo",
@@ -46,5 +48,9 @@ public class CreateGameHandlerTests
 
         // O cadastro de um jogo deve invalidar o cache da lista.
         await cache.Received(1).InvalidateGameListAsync();
+
+        await search.Received(1).IndexAsync(
+            Arg.Is<Game>(g => g.Nome == "Halo"),
+            Arg.Any<CancellationToken>());
     }
 }
