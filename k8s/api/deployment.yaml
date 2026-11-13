@@ -38,7 +38,7 @@ spec:
     spec:
       containers:
         - name: fcg-catalog-api
-          image: jondamiao/fcg-catalog-api:1.0.0
+          image: jondamiao/fcg-catalog-api:4.0.0-preview.0
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 7030

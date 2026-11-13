@@ -21,3 +21,4 @@ data:
   Serilog__Properties__ApplicationName: "FcgCatalog.Api"
   JwtSettings__Issuer: "FcgUsers-Issuer"
   JwtSettings__ExpirationHours: "2"
+  ConnectionStrings__redis: "fcg-redis:6379"
