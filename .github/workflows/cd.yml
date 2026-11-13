@@ -1,0 +1,60 @@
+name: 🚀 CD
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    name: 🚢 Build, Push & Deploy to EKS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout do código
+        uses: actions/checkout@v4
+
+      - name: 🔑 Configurar credenciais AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: 🔐 Login no Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: 🐳 Build, Tag e Push - Catalog API
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: fcg-catalog-api
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -f src/FcgCatalog.Api/Dockerfile -t $REGISTRY/$REPOSITORY:$IMAGE_TAG -t $REGISTRY/$REPOSITORY:latest .
+          docker push $REGISTRY/$REPOSITORY --all-tags
+
+      - name: 🐳 Build, Tag e Push - Catalog Worker
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: fcg-catalog-worker
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -f src/FcgCatalog.Worker/Dockerfile -t $REGISTRY/$REPOSITORY:$IMAGE_TAG -t $REGISTRY/$REPOSITORY:latest .
+          docker push $REGISTRY/$REPOSITORY --all-tags
+
+      - name: ☸️ Configurar Kubeconfig para o EKS
+        run: |
+          aws eks update-kubeconfig --name fcg-platform --region us-east-1
+
+      - name: 🔄 Atualizar Deployments no EKS
+        run: |
+          kubectl set image deployment/fcg-catalog-api fcg-catalog-api=${{ steps.login-ecr.outputs.registry }}/fcg-catalog-api:${{ github.sha }} -n fcg-platform
+          kubectl rollout status deployment/fcg-catalog-api -n fcg-platform
+
+          kubectl set image deployment/fcg-catalog-worker fcg-catalog-worker=${{ steps.login-ecr.outputs.registry }}/fcg-catalog-worker:${{ github.sha }} -n fcg-platform
+          kubectl rollout status deployment/fcg-catalog-worker -n fcg-platform
