@@ -13,7 +13,8 @@ namespace FcgCatalog.Application.Handlers.Games;
 public sealed partial class CreateGameHandler(
     IGameRepository repository,
     ILogger<CreateGameHandler> logger,
-    IGameCacheService cache)
+    IGameCacheService cache,
+    IGameSearchService search)
     : IRequestHandler<CreateGameCommand, Result<GameResponse>>
 {
     public async Task<Result<GameResponse>> Handle(
@@ -36,6 +37,10 @@ public sealed partial class CreateGameHandler(
 
         // Invalida o cache das listas após cadastrar o jogo.
         await cache.InvalidateGameListAsync();
+
+        await search.IndexAsync(
+            game,
+            cancellationToken);
 
         LogCreated(
             logger,
