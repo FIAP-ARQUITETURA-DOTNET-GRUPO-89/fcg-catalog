@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using FcgCatalog.Api.Extensions;
 using FcgCatalog.Application.Commands.Games;
 using FcgCatalog.Application.Queries.Games;
@@ -32,6 +32,21 @@ public static class GamesEndpoints
             .WithSummary("Lista jogos ativos paginados")
             .Produces<PagedResponse<GameResponse>>(StatusCodes.Status200OK)
             .ProducesValidationProblem(StatusCodes.Status400BadRequest);
+
+        group.MapGet("/search", SearchGamesAsync)
+            .RequireAuthorization("CustomerPolicy")
+            .WithName("SearchGames")
+            .WithSummary("Busca avançada de jogos")
+            .WithDescription("Busca no Elasticsearch/OpenSearch com tolerância a erros de digitação (fuzzy) e ordenação por relevância.")
+            .Produces<PagedResponse<GameSearchResponse>>(StatusCodes.Status200OK)
+            .ProducesValidationProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
+
+        group.MapPost("/search/reindex", ReindexGamesAsync)
+            .RequireAuthorization("AdminPolicy")
+            .WithSummary("Reindexa o catálogo no motor de busca")
+            .WithDescription("Recria o índice de busca a partir dos jogos ativos do banco relacional.")
+            .Produces<int>(StatusCodes.Status200OK);
 
         group.MapGet("/{id:guid}", GetGameByIdAsync)
             .RequireAuthorization("CustomerPolicy")
@@ -70,6 +85,18 @@ public static class GamesEndpoints
     private static async Task<IResult> GetGamesAsync([AsParameters] PaginationRequest request, IMediator mediator, CancellationToken cancellationToken)
     {
         var result = await mediator.Send(new GetGamesQuery(request.Page, request.PageSize), cancellationToken);
+        return result.ToOkResult();
+    }
+
+    private static async Task<IResult> SearchGamesAsync([FromQuery] string? q, [AsParameters] PaginationRequest request, IMediator mediator, CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new SearchGamesQuery(q ?? string.Empty, request.Page, request.PageSize), cancellationToken);
+        return result.ToOkResult();
+    }
+
+    private static async Task<IResult> ReindexGamesAsync(IMediator mediator, CancellationToken cancellationToken)
+    {
+        var result = await mediator.Send(new ReindexGamesCommand(), cancellationToken);
         return result.ToOkResult();
     }
 

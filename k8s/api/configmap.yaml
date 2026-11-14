@@ -21,3 +21,5 @@ data:
   Serilog__Properties__ApplicationName: "FcgCatalog.Api"
   JwtSettings__Issuer: "FcgUsers-Issuer"
   JwtSettings__ExpirationHours: "2"
+  OpenSearch__IndexName: "fcg-games"
+  OpenSearch__NumberOfReplicas: "0"

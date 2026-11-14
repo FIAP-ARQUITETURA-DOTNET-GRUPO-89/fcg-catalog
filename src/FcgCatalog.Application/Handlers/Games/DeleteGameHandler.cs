@@ -9,7 +9,8 @@ namespace FcgCatalog.Application.Handlers.Games;
 
 public sealed class DeleteGameHandler(
     IGameRepository repository,
-    IGameCacheService cache)
+    IGameCacheService cache,
+    IGameSearchService search)
     : IRequestHandler<DeleteGameCommand, Result<bool>>
 {
     public async Task<Result<bool>> Handle(
@@ -30,6 +31,10 @@ public sealed class DeleteGameHandler(
         // Remove o jogo e invalida o cache da listagem.
         await cache.InvalidateGameAsync(
             request.Id);
+
+        await search.IndexAsync(
+            game,
+            cancellationToken);
 
         return Result.Success(true);
     }

@@ -18,6 +18,7 @@ public class UpdatePriceHandlerTests
         // Arrange
         var repo = Substitute.For<IGameRepository>();
         var cache = Substitute.For<IGameCacheService>();
+        var search = Substitute.For<IGameSearchService>();
 
         repo.GetByIdAsync(
             Arg.Any<Guid>(),
@@ -26,7 +27,8 @@ public class UpdatePriceHandlerTests
 
         var handler = new UpdatePriceHandler(
             repo,
-            cache);
+            cache,
+            search);
 
         var command = new UpdatePriceCommand(50m)
         {
@@ -44,6 +46,9 @@ public class UpdatePriceHandlerTests
         // Como o jogo não existe, o cache não deve ser invalidado.
         await cache.DidNotReceive()
             .InvalidateGameAsync(Arg.Any<Guid>());
+
+        await search.DidNotReceive()
+            .IndexAsync(Arg.Any<Game>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -52,6 +57,7 @@ public class UpdatePriceHandlerTests
         // Arrange
         var repo = Substitute.For<IGameRepository>();
         var cache = Substitute.For<IGameCacheService>();
+        var search = Substitute.For<IGameSearchService>();
 
         var game = new Game(
             "Halo",
@@ -67,7 +73,8 @@ public class UpdatePriceHandlerTests
 
         var handler = new UpdatePriceHandler(
             repo,
-            cache);
+            cache,
+            search);
 
         var command = new UpdatePriceCommand(80m)
         {
@@ -89,5 +96,8 @@ public class UpdatePriceHandlerTests
         // A alteração do preço deve invalidar o cache do jogo e da lista.
         await cache.Received(1)
             .InvalidateGameAsync(game.Id);
+
+        await search.Received(1)
+            .IndexAsync(game, Arg.Any<CancellationToken>());
     }
 }

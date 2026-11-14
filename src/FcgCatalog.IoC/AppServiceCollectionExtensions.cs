@@ -18,6 +18,9 @@ using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Driver;
 using FcgCatalog.Application.Interfaces;
 using FcgCatalog.Infrastructure.Caching;
+using FcgCatalog.Infrastructure.Search;
+using Microsoft.Extensions.Options;
+using OpenSearch.Client;
 
 namespace FcgCatalog.IoC;
 
@@ -59,5 +62,30 @@ public static class AppServiceCollectionExtensions
         services.AddScoped<IUserGameRepository, UserGameRepository>();
         services.AddScoped<IGameReviewRepository, GameReviewRepository>();
         services.AddScoped<IGameCacheService, RedisGameCacheService>();
+
+        services.AddOpenSearch(configuration);
+    }
+
+    private static void AddOpenSearch(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddOptions<OpenSearchSettings>().Bind(configuration.GetSection(OpenSearchSettings.SectionName));
+
+        services.AddSingleton<IOpenSearchClient>(sp =>
+        {
+            var settings = sp.GetRequiredService<IOptions<OpenSearchSettings>>().Value;
+
+            var connectionSettings = new ConnectionSettings(new Uri(settings.Url))
+                .DefaultIndex(settings.IndexName)
+                .RequestTimeout(TimeSpan.FromSeconds(10));
+
+            if (!string.IsNullOrWhiteSpace(settings.Username))
+            {
+                connectionSettings = connectionSettings.BasicAuthentication(settings.Username, settings.Password);
+            }
+
+            return new OpenSearchClient(connectionSettings);
+        });
+
+        services.AddScoped<IGameSearchService, OpenSearchGameSearchService>();
     }
 }
