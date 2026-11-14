@@ -11,7 +11,8 @@ namespace FcgCatalog.Application.Handlers.Games;
 public sealed partial class UpdateGameHandler(
     IGameRepository repository,
     ILogger<UpdateGameHandler> logger,
-    IGameCacheService cache)
+    IGameCacheService cache,
+    IGameSearchService search)
     : IRequestHandler<UpdateGameCommand, Result<bool>>
 {
     public async Task<Result<bool>> Handle(
@@ -51,6 +52,10 @@ public sealed partial class UpdateGameHandler(
 
         // Remove o jogo e invalida o cache da listagem.
         await cache.InvalidateGameAsync(request.Id);
+
+        await search.IndexAsync(
+            game,
+            cancellationToken);
 
         return Result.Success(true);
     }

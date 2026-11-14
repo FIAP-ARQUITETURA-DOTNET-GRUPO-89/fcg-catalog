@@ -40,6 +40,12 @@ public class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddlewa
 
             await WriteProblemDetails(context, statusCode, ex.Message);
         }
+        catch (ServiceUnavailableException ex)
+        {
+            _logger.LogWarning(ex, "Dependência indisponível em {Method} {Path}", context.Request.Method, context.Request.Path);
+
+            await WriteProblemDetails(context, StatusCodes.Status503ServiceUnavailable, ex.Message);
+        }
         catch (UnauthorizedAccessException ex)
         {
             _logger.LogWarning(ex, "Falha na validação de acesso em {Method} {Path} | Motivo: {Message}", context.Request.Method, context.Request.Path, ex.Message);
@@ -94,6 +100,7 @@ public class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddlewa
         StatusCodes.Status404NotFound => "Not Found",
         StatusCodes.Status409Conflict => "Conflict",
         StatusCodes.Status500InternalServerError => "Internal Server Error",
+        StatusCodes.Status503ServiceUnavailable => "Service Unavailable",
         _ => "Error"
     };
 }

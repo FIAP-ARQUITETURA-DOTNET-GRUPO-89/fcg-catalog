@@ -9,7 +9,8 @@ namespace FcgCatalog.Application.Handlers.Games;
 
 public sealed class UpdatePriceHandler(
     IGameRepository repository,
-    IGameCacheService cache)
+    IGameCacheService cache,
+    IGameSearchService search)
     : IRequestHandler<UpdatePriceCommand, Result<bool>>
 {
     public async Task<Result<bool>> Handle(
@@ -30,6 +31,10 @@ public sealed class UpdatePriceHandler(
         // Remove o jogo e invalida o cache da listagem.
         await cache.InvalidateGameAsync(
             request.Id);
+
+        await search.IndexAsync(
+            game,
+            cancellationToken);
 
         return Result.Success(true);
     }

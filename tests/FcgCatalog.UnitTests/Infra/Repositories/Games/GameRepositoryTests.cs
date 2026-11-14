@@ -106,4 +106,58 @@ public class GameRepositoryTests
         page.Select(g => g.Nome)
             .ShouldBe(["Banjo", "Doom", "Halo"]);
     }
+
+    [Fact]
+    public async Task GetActiveBatchAfterAsNoTrackingAsync_DevePaginarPorCursorIgnorandoInativos()
+    {
+        // Arrange
+        using var ctx = InMemoryDbContextFactory.CreateContext();
+        var repo = new GameRepository(ctx);
+
+        var inativo = NewGame("Doom");
+        inativo.Inativar();
+
+        foreach (var game in new[] { NewGame("Celeste"), NewGame("Asteroids"), inativo, NewGame("Bioshock"), NewGame("Elden Ring") })
+        {
+            repo.Add(game);
+        }
+
+        await repo.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        // Act
+        var first = await repo.GetActiveBatchAfterAsNoTrackingAsync(null, 2, TestContext.Current.CancellationToken);
+        var second = await repo.GetActiveBatchAfterAsNoTrackingAsync(first[^1].Nome, 2, TestContext.Current.CancellationToken);
+        var third = await repo.GetActiveBatchAfterAsNoTrackingAsync(second[^1].Nome, 2, TestContext.Current.CancellationToken);
+
+        // Assert
+        first.Select(g => g.Nome).ShouldBe(["Asteroids", "Bioshock"]);
+        second.Select(g => g.Nome).ShouldBe(["Celeste", "Elden Ring"]);
+        third.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task GetChangedSinceAsNoTrackingAsync_DeveRetornarJogosCriadosOuAlteradosIncluindoInativos()
+    {
+        // Arrange
+        using var ctx = InMemoryDbContextFactory.CreateContext();
+        var repo = new GameRepository(ctx);
+
+        var antigo = NewGame("Halo");
+        repo.Add(antigo);
+        await repo.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var since = DateTime.UtcNow;
+
+        var novo = NewGame("Zelda");
+        repo.Add(novo);
+        antigo.Inativar();
+        await repo.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        // Act
+        var changed = await repo.GetChangedSinceAsNoTrackingAsync(since, TestContext.Current.CancellationToken);
+
+        // Assert
+        changed.Select(g => g.Id).ShouldBe([antigo.Id, novo.Id], ignoreOrder: true);
+        changed.Single(g => g.Id == antigo.Id).Inativo.ShouldBeTrue();
+    }
 }

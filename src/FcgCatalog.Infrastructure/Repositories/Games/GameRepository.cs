@@ -48,6 +48,20 @@ public sealed class GameRepository(FcgCatalogDbContext context) : IGameRepositor
             .Take(pageSize)
             .ToListAsync(cancellationToken);
 
+    public async Task<IReadOnlyList<Game>> GetActiveBatchAfterAsNoTrackingAsync(string? afterNome, int take, CancellationToken cancellationToken = default)
+        => await context.Games
+            .AsNoTracking()
+            .Where(g => !g.Inativo && (afterNome == null || string.Compare(g.Nome, afterNome) > 0))
+            .OrderBy(g => g.Nome)
+            .Take(take)
+            .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<Game>> GetChangedSinceAsNoTrackingAsync(DateTime since, CancellationToken cancellationToken = default)
+        => await context.Games
+            .AsNoTracking()
+            .Where(g => g.CreatedAt >= since || g.UpdatedAt >= since)
+            .ToListAsync(cancellationToken);
+
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         => context.SaveChangesAsync(cancellationToken);
 }

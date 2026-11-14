@@ -1,7 +1,10 @@
-﻿using FcgCatalog.Infrastructure.Database;
+﻿using FcgCatalog.Api.HealthChecks;
+using FcgCatalog.Api.HostedServices;
+using FcgCatalog.Infrastructure.Database;
 using FcgCatalog.Infrastructure.Repositories.Games;
 using FcgCatalog.Domain.Repositories.Games;
 using FcgCatalog.IoC;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.OpenApi;
 
 namespace FcgCatalog.Api.Extensions;
@@ -37,6 +40,10 @@ public static class ConfigureServicesExtensions
 
         services.AddHealthChecks()
             .AddDbContextCheck<FcgCatalogDbContext>()
-            .AddMongoDb();
+            .AddMongoDb()
+            // Degraded: a indisponibilidade da busca não deve reiniciar o pod nem derrubar o CRUD.
+            .AddCheck<OpenSearchHealthCheck>("opensearch", failureStatus: HealthStatus.Degraded);
+
+        services.AddHostedService<SearchIndexInitializer>();
     }
 }

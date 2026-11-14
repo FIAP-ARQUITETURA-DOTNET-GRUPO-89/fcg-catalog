@@ -1,4 +1,4 @@
-﻿<Project>
+<Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
@@ -12,6 +12,7 @@
     <PackageVersion Include="Aspire.Hosting.RabbitMQ" Version="13.6.5" />
     <PackageVersion Include="Aspire.Hosting.Testing" Version="13.6.5" />
     <PackageVersion Include="Aspire.MongoDB.Driver" Version="13.5.3" />
+    <PackageVersion Include="OpenSearch.Client" Version="2.3.0" />
     <PackageVersion Include="Divino.OperationResult" Version="4.0.1" />
     <PackageVersion Include="FgcGames.EventContracts" Version="0.1.0-preview.2" />
     <PackageVersion Include="FluentValidation" Version="12.1.1" />

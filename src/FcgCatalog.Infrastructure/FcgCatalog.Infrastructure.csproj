@@ -19,6 +19,7 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" />
     <PackageReference Include="MongoDB.Driver" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="OpenSearch.Client" />
     <PackageReference Include="StackExchange.Redis" />
   </ItemGroup>
 

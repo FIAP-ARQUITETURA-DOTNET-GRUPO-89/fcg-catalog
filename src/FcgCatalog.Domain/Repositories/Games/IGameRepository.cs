@@ -60,6 +60,23 @@ public interface IGameRepository
     Task<IReadOnlyList<Game>> GetPagedAsNoTrackingAsync(int page, int pageSize, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Obtém um lote de jogos ativos ordenados por nome, a partir do nome informado (paginação por cursor).
+    /// </summary>
+    /// <param name="afterNome">Nome do último jogo do lote anterior; null para o primeiro lote.</param>
+    /// <param name="take">Quantidade máxima de jogos do lote.</param>
+    /// <param name="cancellationToken">Token de cancelamento da operação.</param>
+    /// <returns>Lote de jogos ativos com nome posterior a <paramref name="afterNome"/>.</returns>
+    Task<IReadOnlyList<Game>> GetActiveBatchAfterAsNoTrackingAsync(string? afterNome, int take, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Obtém os jogos, ativos ou inativos, criados ou alterados a partir da data informada.
+    /// </summary>
+    /// <param name="since">Data (UTC) a partir da qual as alterações são consideradas.</param>
+    /// <param name="cancellationToken">Token de cancelamento da operação.</param>
+    /// <returns>Jogos criados ou alterados desde <paramref name="since"/>.</returns>
+    Task<IReadOnlyList<Game>> GetChangedSinceAsNoTrackingAsync(DateTime since, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Persiste as alterações realizadas no repositório.
     /// </summary>
     /// <param name="cancellationToken">Token de cancelamento da operação.</param>
