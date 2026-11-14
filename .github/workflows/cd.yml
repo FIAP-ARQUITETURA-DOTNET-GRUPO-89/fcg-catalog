@@ -1,60 +1,65 @@
 name: 🚀 CD
 
 on:
-  push:
+  workflow_run:
+    workflows: ["🧪 CI"]
+    types:
+      - completed
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Tag da imagem publicada no ECR (ex: commit SHA ou latest)'
+        required: true
+        default: 'latest'
 
 permissions:
   id-token: write
   contents: read
 
+env:
+  AWS_REGION: us-east-1
+  EKS_CLUSTER_NAME: fcg-platform
+  K8S_NAMESPACE: fcg-platform
+  ECR_REGISTRY: 368379549295.dkr.ecr.us-east-1.amazonaws.com
+
 jobs:
   deploy:
-    name: 🚢 Build, Push & Deploy to EKS
+    name: ☸️ Deploy to EKS
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
 
     steps:
-      - name: 📥 Checkout do código
-        uses: actions/checkout@v4
-
-      - name: 🔑 Configurar credenciais AWS
+      - name: 🔑 Autenticar na AWS via OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
 
-      - name: 🔐 Login no Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: 🐳 Build, Tag e Push - Catalog API
-        env:
-          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          REPOSITORY: fcg-catalog-api
-          IMAGE_TAG: ${{ github.sha }}
+      - name: 🏷️ Definir Tag da Imagem
+        id: set-tag
         run: |
-          docker build -f src/FcgCatalog.Api/Dockerfile -t $REGISTRY/$REPOSITORY:$IMAGE_TAG -t $REGISTRY/$REPOSITORY:latest .
-          docker push $REGISTRY/$REPOSITORY --all-tags
-
-      - name: 🐳 Build, Tag e Push - Catalog Worker
-        env:
-          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          REPOSITORY: fcg-catalog-worker
-          IMAGE_TAG: ${{ github.sha }}
-        run: |
-          docker build -f src/FcgCatalog.Worker/Dockerfile -t $REGISTRY/$REPOSITORY:$IMAGE_TAG -t $REGISTRY/$REPOSITORY:latest .
-          docker push $REGISTRY/$REPOSITORY --all-tags
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "IMAGE_TAG=${{ github.event.inputs.image_tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "IMAGE_TAG=${{ github.event.workflow_run.head_sha }}" >> $GITHUB_OUTPUT
+          fi
 
       - name: ☸️ Configurar Kubeconfig para o EKS
         run: |
-          aws eks update-kubeconfig --name fcg-platform --region us-east-1
+          aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
 
       - name: 🔄 Atualizar Deployments no EKS
+        env:
+          IMAGE_TAG: ${{ steps.set-tag.outputs.IMAGE_TAG }}
         run: |
-          kubectl set image deployment/fcg-catalog-api fcg-catalog-api=${{ steps.login-ecr.outputs.registry }}/fcg-catalog-api:${{ github.sha }} -n fcg-platform
-          kubectl rollout status deployment/fcg-catalog-api -n fcg-platform
+          kubectl set image deployment/fcg-catalog-api \
+            fcg-catalog-api=${{ env.ECR_REGISTRY }}/fcg-catalog-api:${IMAGE_TAG} \
+            -n ${{ env.K8S_NAMESPACE }}
+          kubectl rollout status deployment/fcg-catalog-api -n ${{ env.K8S_NAMESPACE }}
 
-          kubectl set image deployment/fcg-catalog-worker fcg-catalog-worker=${{ steps.login-ecr.outputs.registry }}/fcg-catalog-worker:${{ github.sha }} -n fcg-platform
-          kubectl rollout status deployment/fcg-catalog-worker -n fcg-platform
+          kubectl set image deployment/fcg-catalog-worker \
+            fcg-catalog-worker=${{ env.ECR_REGISTRY }}/fcg-catalog-worker:${IMAGE_TAG} \
+            -n ${{ env.K8S_NAMESPACE }}
+          kubectl rollout status deployment/fcg-catalog-worker -n ${{ env.K8S_NAMESPACE }}
