@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       image_tag:
-        description: 'Tag da imagem publicada no ECR (ex: commit SHA, versão ou latest)'
+        description: 'Tag da imagem publicada no ECR (ex: latest ou versao)'
         required: true
         default: 'latest'
 
@@ -33,7 +33,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
-          aws-region: ${{ vars.AWS_REGION || env.AWS_REGION }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: 🏷️ Definir Tag da Imagem
         id: set-tag
@@ -41,7 +41,13 @@ jobs:
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             echo "IMAGE_TAG=${{ github.event.inputs.image_tag }}" >> $GITHUB_OUTPUT
           else
-            echo "IMAGE_TAG=${{ github.event.workflow_run.head_sha }}" >> $GITHUB_OUTPUT
+            # Usa o head_sha do commit que gerou o run ou latest como fallback seguro
+            SHA="${{ github.event.workflow_run.head_sha }}"
+            if [ -n "$SHA" ]; then
+              echo "IMAGE_TAG=$SHA" >> $GITHUB_OUTPUT
+            else
+              echo "IMAGE_TAG=latest" >> $GITHUB_OUTPUT
+            fi
           fi
 
       - name: ☸️ Configurar Kubeconfig para o EKS
