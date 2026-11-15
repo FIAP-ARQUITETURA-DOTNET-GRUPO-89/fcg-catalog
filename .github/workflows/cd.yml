@@ -2,15 +2,13 @@ name: 🚀 CD - Catalog
 
 on:
   workflow_run:
-    workflows: ["🧪 CI"]
+    workflows: ["🐳 Publish FcgCatalog Images"]
     types:
       - completed
-    branches:
-      - k8s-eks
   workflow_dispatch:
     inputs:
       image_tag:
-        description: 'Tag da imagem publicada no ECR (ex: commit SHA ou latest)'
+        description: 'Tag da imagem publicada no ECR (ex: commit SHA, versão ou latest)'
         required: true
         default: 'latest'
 
@@ -34,8 +32,8 @@ jobs:
       - name: 🔑 Autenticar na AWS via OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION || env.AWS_REGION }}
 
       - name: 🏷️ Definir Tag da Imagem
         id: set-tag
