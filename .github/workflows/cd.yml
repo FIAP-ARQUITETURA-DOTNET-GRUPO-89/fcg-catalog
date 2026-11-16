@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       image_tag:
-        description: 'Tag da imagem publicada no ECR (ex: latest ou versao)'
+        description: 'Tag da imagem publicada no ECR (ex: latest ou 4.0.0-preview.3)'
         required: true
         default: 'latest'
 
@@ -29,30 +29,33 @@ jobs:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
 
     steps:
+      - name: 📥 Checkout do repositório
+        uses: actions/checkout@v4
+
       - name: 🔑 Autenticar na AWS via OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: ${{ vars.AWS_REGION || env.AWS_REGION }}
 
       - name: 🏷️ Definir Tag da Imagem
         id: set-tag
         run: |
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            echo "IMAGE_TAG=${{ github.event.inputs.image_tag }}" >> $GITHUB_OUTPUT
+            echo "IMAGE_TAG=${{ github.event.inputs.image_tag }}" >> "$GITHUB_OUTPUT"
           else
-            # Usa o head_sha do commit que gerou o run ou latest como fallback seguro
-            SHA="${{ github.event.workflow_run.head_sha }}"
-            if [ -n "$SHA" ]; then
-              echo "IMAGE_TAG=$SHA" >> $GITHUB_OUTPUT
-            else
-              echo "IMAGE_TAG=latest" >> $GITHUB_OUTPUT
-            fi
+            echo "IMAGE_TAG=latest" >> "$GITHUB_OUTPUT"
           fi
 
       - name: ☸️ Configurar Kubeconfig para o EKS
         run: |
           aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
+
+      - name: 🏗️ Garantir Namespace e Manifests Base (Primeiro Deploy)
+        run: |
+          kubectl create namespace ${{ env.K8S_NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
+          kubectl apply -f k8s/api/ -n ${{ env.K8S_NAMESPACE }}
+          kubectl apply -f k8s/worker/ -n ${{ env.K8S_NAMESPACE }}
 
       - name: 🔄 Atualizar Deployments no EKS (API e Worker)
         env:

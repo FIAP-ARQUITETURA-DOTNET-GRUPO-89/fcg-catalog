@@ -31,7 +31,7 @@ spec:
       containers:
         - name: fcg-catalog-api
           image: 368379549295.dkr.ecr.us-east-1.amazonaws.com/fcg-catalog-api:latest
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 7030
           envFrom:
