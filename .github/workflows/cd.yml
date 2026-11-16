@@ -44,18 +44,30 @@ jobs:
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             echo "IMAGE_TAG=${{ github.event.inputs.image_tag }}" >> "$GITHUB_OUTPUT"
           else
-            echo "IMAGE_TAG=latest" >> "$GITHUB_OUTPUT"
+            REF_NAME="${{ github.event.workflow_run.head_branch }}"
+            if [[ "$REF_NAME" == v* ]]; then
+              echo "IMAGE_TAG=${REF_NAME#v}" >> "$GITHUB_OUTPUT"
+            else
+              echo "IMAGE_TAG=latest" >> "$GITHUB_OUTPUT"
+            fi
           fi
 
       - name: ☸️ Configurar Kubeconfig para o EKS
         run: |
           aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
 
-      - name: 🏗️ Garantir Namespace e Manifests Base (Primeiro Deploy)
+      - name: 🏗️ Aplicar Manifests Base (ConfigMaps e Secrets antes dos Deployments)
         run: |
-          kubectl create namespace ${{ env.K8S_NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
-          kubectl apply -f k8s/api/ -n ${{ env.K8S_NAMESPACE }}
-          kubectl apply -f k8s/worker/ -n ${{ env.K8S_NAMESPACE }}
+          # API: Configurações e Service primeiro, Deployment por último
+          kubectl apply -f k8s/api/configmap.yaml -n ${{ env.K8S_NAMESPACE }}
+          kubectl apply -f k8s/api/secret.yaml -n ${{ env.K8S_NAMESPACE }}
+          kubectl apply -f k8s/api/service.yaml -n ${{ env.K8S_NAMESPACE }}
+          kubectl apply -f k8s/api/deployment.yaml -n ${{ env.K8S_NAMESPACE }}
+
+          # Worker: Configurações primeiro, Deployment por último
+          kubectl apply -f k8s/worker/configmap.yaml -n ${{ env.K8S_NAMESPACE }}
+          kubectl apply -f k8s/worker/secret.yaml -n ${{ env.K8S_NAMESPACE }}
+          kubectl apply -f k8s/worker/deployment.yaml -n ${{ env.K8S_NAMESPACE }}
 
       - name: 🔄 Atualizar Deployments no EKS (API e Worker)
         env:
